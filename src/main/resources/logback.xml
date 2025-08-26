@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <logger name="de.presti.smpmp" level="info" />
+    <logger name="de.presti.smphelper" level="info" />
 
     <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
 

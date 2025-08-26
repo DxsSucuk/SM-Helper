@@ -1,11 +1,10 @@
-package de.presti.smpmp;
+package de.presti.smphelper;
 
 import com.google.gson.Gson;
-import de.presti.smpmp.listener.ComponentListener;
-import de.presti.smpmp.listener.MessageListener;
-import de.presti.smpmp.utils.Config;
+import de.presti.smphelper.listener.ComponentListener;
+import de.presti.smphelper.listener.MessageListener;
+import de.presti.smphelper.utils.Config;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -17,9 +16,6 @@ import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Icon;
-import net.dv8tion.jda.api.entities.emoji.ApplicationEmoji;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -29,7 +25,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.List;
 
 @Slf4j
 @Getter

@@ -1,6 +1,6 @@
-package de.presti.smpmp.listener;
+package de.presti.smphelper.listener;
 
-import de.presti.smpmp.Main;
+import de.presti.smphelper.Main;
 import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
 import net.dv8tion.jda.api.entities.Message;
@@ -9,8 +9,6 @@ import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionE
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
-
-import java.nio.charset.StandardCharsets;
 
 public class MessageListener extends ListenerAdapter {
 

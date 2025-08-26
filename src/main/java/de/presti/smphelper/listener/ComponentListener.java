@@ -1,6 +1,6 @@
-package de.presti.smpmp.listener;
+package de.presti.smphelper.listener;
 
-import de.presti.smpmp.Main;
+import de.presti.smphelper.Main;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
