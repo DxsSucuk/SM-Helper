@@ -1,6 +1,7 @@
 package de.presti.smphelper;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import de.presti.smphelper.listener.ComponentListener;
 import de.presti.smphelper.listener.MessageListener;
 import de.presti.smphelper.utils.Config;
@@ -16,6 +17,8 @@ import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -44,6 +47,7 @@ public class Main {
     @Getter
     private static long currentIndex = 0;
 
+    @Getter
     private static Config config;
 
     private static final Path configPath = Path.of("config.json");
@@ -83,17 +87,23 @@ public class Main {
             return;
         }
 
-        guild.updateCommands().addCommands(Commands.message("Upload file to report")).queue();
+        guild.updateCommands().addCommands(
+                Commands.message("Upload file to report"),
+                Commands.slash("send", "Send initial messages (DEV STUFF)")
+                        .addOption(OptionType.INTEGER, "typ", "The tpy of message which should be send again.", true)
+                        .addOption(OptionType.CHANNEL, "channel", "The channel which should receive the message.", true)
+                ).queue();
 
         if (config.isSendInitialMessage()) {
-            createInitialMessage();
+            var channel = botInstance.getTextChannelById(config.getChannelId());
+            if (channel != null) {
+                channel.sendMessageComponents(createInitialMessageForReport()).useComponentsV2().queue();
+            }
         }
     }
 
-    public static void createInitialMessage() {
-        var channel = botInstance.getTextChannelById(initialChannel);
-
-        Container container = Container.of(
+    public static Container createInitialMessageForReport() {
+        return Container.of(
                 Section.of(
                         Thumbnail.fromFile(getResourceAsFileUpload("/minispideysad.png")),
                         TextDisplay.of("## How to report a crash"),
@@ -114,15 +124,37 @@ public class Main {
                 Separator.createDivider(Separator.Spacing.SMALL),
                 ActionRow.of(Button.of(ButtonStyle.DANGER, "open_report_modal", "Report bug!"))
         );
+    }
 
-        channel.sendMessageComponents(container).useComponentsV2().queue();
+    public static Container createInstallMessage() {
+        return Container.of(
+                Section.of(
+                        Thumbnail.fromFile(getResourceAsFileUpload("/minispideysad.png")),
+                        TextDisplay.of("## How to report a crash"),
+                        TextDisplay.of("Simple guide to help your report crashes efficiently!")
+                ),
+
+                Separator.createDivider(Separator.Spacing.SMALL),
+
+                TextDisplay.of("## What do I need before reporting?"),
+                TextDisplay.of("You will need to find your crash log and DMP file!"),
+                TextDisplay.of("Both of these files should be in your SMT/Logs folder!"),
+
+                Separator.createDivider(Separator.Spacing.LARGE),
+
+                TextDisplay.of("## What now?"),
+                TextDisplay.of("Just press the \"Report bug!\" button and follow the instructions!"),
+
+                Separator.createDivider(Separator.Spacing.SMALL),
+                ActionRow.of(Button.of(ButtonStyle.DANGER, "open_report_modal", "Report bug!"))
+        );
     }
 
     public static void setCurrentIndex(long index) {
         currentIndex = index;
         config.setCurrentIndex(currentIndex);
         try {
-            Files.writeString(configPath, new Gson().toJson(config), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.writeString(configPath, new GsonBuilder().setPrettyPrinting().create().toJson(config), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             log.error("Failed to write config file!");
         }

@@ -5,12 +5,40 @@ import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import org.jetbrains.annotations.NotNull;
 
 public class MessageListener extends ListenerAdapter {
+
+    @Override
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+        super.onSlashCommandInteraction(event);
+        if (event.isFromGuild() && event.getMember().getId().equalsIgnoreCase(Main.getConfig().getDevUserId())) {
+            if (event.getName().equalsIgnoreCase("send")) {
+                var typMapping = event.getOption("typ");
+                var channelMapping = event.getOption("channel");
+
+                if (typMapping != null && channelMapping != null) {
+
+                    GuildMessageChannel channel = channelMapping.getAsChannel().asGuildMessageChannel();
+
+                    switch (typMapping.getAsInt()) {
+                        case 1 -> channel.sendMessageComponents(Main.createInitialMessageForReport()).useComponentsV2().queue();
+                        case 2 -> channel.sendMessageComponents(Main.createInstallMessage()).useComponentsV2().queue();
+                    }
+                } else {
+                    event.reply("Invalid args.").setEphemeral(true).queue();
+                }
+            }
+        } else {
+            event.reply("Not allowed!").setEphemeral(true).queue();
+        }
+    }
 
     @Override
     public void onMessageContextInteraction(MessageContextInteractionEvent event) {

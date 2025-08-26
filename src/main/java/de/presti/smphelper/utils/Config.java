@@ -14,5 +14,6 @@ public class Config {
     long forumChannelId;
     boolean sendInitialMessage;
     long currentIndex;
+    String devUserId;
 
 }

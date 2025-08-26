@@ -36,7 +36,7 @@ public class ComponentListener extends ListenerAdapter {
 
             TextInput body = TextInput.create("crash_description", "Description", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Give us a description of what happened!")
-                    .setMinLength(30)
+                    .setMinLength(15)
                     .setMaxLength(1000)
                     .setRequired(true)
                     .build();
