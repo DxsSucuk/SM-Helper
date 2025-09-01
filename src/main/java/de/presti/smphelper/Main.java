@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -28,6 +27,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 
 @Slf4j
 @Getter
@@ -126,8 +126,10 @@ public class Main {
         );
     }
 
-    public static Container createInstallMessage() {
-        return Container.of(
+    private static Container commonIssueContainer;
+
+    public static Container createCommonIssues() {
+        return Objects.requireNonNullElseGet(commonIssueContainer, () -> commonIssueContainer = Container.of(
                 Section.of(
                         Thumbnail.fromFile(getResourceAsFileUpload("/minispideysad.png")),
                         TextDisplay.of("## How to report a crash"),
@@ -147,7 +149,7 @@ public class Main {
 
                 Separator.createDivider(Separator.Spacing.SMALL),
                 ActionRow.of(Button.of(ButtonStyle.DANGER, "open_report_modal", "Report bug!"))
-        );
+        ));
     }
 
     public static void setCurrentIndex(long index) {

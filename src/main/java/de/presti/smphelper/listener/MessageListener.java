@@ -29,7 +29,7 @@ public class MessageListener extends ListenerAdapter {
 
                     switch (typMapping.getAsInt()) {
                         case 1 -> channel.sendMessageComponents(Main.createInitialMessageForReport()).useComponentsV2().queue();
-                        case 2 -> channel.sendMessageComponents(Main.createInstallMessage()).useComponentsV2().queue();
+                        case 2 -> channel.sendMessageComponents(Main.createCommonIssues()).useComponentsV2().queue();
                     }
                 } else {
                     event.reply("Invalid args.").setEphemeral(true).queue();

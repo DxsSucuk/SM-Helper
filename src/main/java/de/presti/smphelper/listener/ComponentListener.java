@@ -62,8 +62,9 @@ public class ComponentListener extends ListenerAdapter {
             int lobbyCount = -1;
             try {
                  lobbyCount = Integer.parseInt(event.getValue("lobby_size").getAsString());
+                 if (lobbyCount > 16) throw new IllegalArgumentException();
             } catch (Exception exception) {
-                event.reply("Invalid lobby size. Please enter a valid number between 1 and 16.").queue();
+                event.reply("Invalid lobby size. Please enter a valid number between 1 and 16.").setEphemeral(true).queue();
                 return;
             }
             String description = event.getValue("crash_description").getAsString();
@@ -92,7 +93,7 @@ public class ComponentListener extends ListenerAdapter {
                     Separator.createDivider(Separator.Spacing.SMALL),
                     TextDisplay.of("## What now?"),
                     TextDisplay.of("If you played with multiple people you should probably ping them here!"),
-                    TextDisplay.of("Just so we can keep track of them! Otherwise patients is the key!"),
+                    TextDisplay.of("Just so we can keep track of them! Otherwise patiently wait!"),
                     Separator.createDivider(Separator.Spacing.LARGE),
                     TextDisplay.of("## Reported by"),
                     TextDisplay.of(event.getMember().getAsMention())
