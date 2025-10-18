@@ -17,6 +17,9 @@ import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -27,6 +30,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -91,8 +95,10 @@ public class Main {
                 Commands.message("Upload file to report"),
                 Commands.slash("send", "Send initial messages (DEV STUFF)")
                         .addOption(OptionType.INTEGER, "typ", "The tpy of message which should be send again.", true)
-                        .addOption(OptionType.CHANNEL, "channel", "The channel which should receive the message.", true)
-                ).queue();
+                        .addOption(OptionType.CHANNEL, "channel", "The channel which should receive the message.", true),
+                Commands.slash("forum", "Set the Forum tags (DEV STUFF)")
+                        .addOption(OptionType.CHANNEL, "channel", "The Forum channel which should receive the tags.", true)
+        ).queue();
 
         if (config.isSendInitialMessage()) {
             var channel = botInstance.getTextChannelById(config.getChannelId());
@@ -100,6 +106,20 @@ public class Main {
                 channel.sendMessageComponents(createInitialMessageForReport()).useComponentsV2().queue();
             }
         }
+
+        if (config.isSetInitialForumTag()) {
+            var channel = botInstance.getForumChannelById(config.getForumChannelId());
+            if (channel != null) {
+                setTags(channel);
+            }
+        }
+    }
+
+    public static void setTags(ForumChannel channel) {
+        channel.getManager().setAvailableTags(List.of(
+                new ForumTagData("Open").setModerated(true).setEmoji(Emoji.fromUnicode("🟩")),
+                new ForumTagData("Working on fix").setModerated(true).setEmoji(Emoji.fromUnicode("🟧")),
+                new ForumTagData("Closed").setModerated(true).setEmoji(Emoji.fromUnicode("🟥")))).queue();
     }
 
     public static Container createInitialMessageForReport() {

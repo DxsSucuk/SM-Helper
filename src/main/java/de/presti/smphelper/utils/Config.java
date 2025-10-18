@@ -13,6 +13,7 @@ public class Config {
     long channelId;
     long forumChannelId;
     boolean sendInitialMessage;
+    boolean setInitialForumTag;
     long currentIndex;
     String devUserId;
 
