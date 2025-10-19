@@ -96,7 +96,7 @@ public class ComponentListener extends ListenerAdapter {
                     event.reply("Extension of the dump file is not .dmp").setEphemeral(true).queue();
                     return;
                 }
-                dumpDisplay = FileDisplay.fromFile(FileUpload.fromData(dumpFile.getProxy().download().join(), dumpFile.getFileName())).withUniqueId(1001);
+                dumpDisplay = FileDisplay.fromFile(FileUpload.fromData(dumpFile.getProxy().download().join(), dumpFile.getFileName())).withUniqueId(1002);
             }
 
             Container container = Container.of(
