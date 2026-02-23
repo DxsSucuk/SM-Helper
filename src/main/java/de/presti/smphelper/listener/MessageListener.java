@@ -1,6 +1,8 @@
 package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
+import de.presti.smphelper.utils.ThreadUtil;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
 import net.dv8tion.jda.api.entities.Message;
@@ -9,12 +11,20 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
 public class MessageListener extends ListenerAdapter {
+
+    List<Long> timedOutUsers = new ArrayList<>();
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
@@ -53,12 +63,39 @@ public class MessageListener extends ListenerAdapter {
     }
 
     @Override
+    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
+        super.onMessageReceived(event);
+        if (event.getChannel().getType() == ChannelType.TEXT && event.getChannel().asTextChannel().getParentCategoryIdLong() == Main.getRespondToMessageCategory()) {
+            if (timedOutUsers.contains(event.getAuthor().getIdLong())) return;
+
+            timedOutUsers.add(event.getAuthor().getIdLong());
+
+            ThreadUtil.createThread(x -> timedOutUsers.remove(event.getAuthor().getIdLong()), Duration.ofSeconds(30), false, false);
+
+            String content = event.getMessage().getContentRaw().toLowerCase();
+
+            if (content.contains("free") || content.contains("release")) {
+                event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
+            } else if (content.contains("help") && event.getMember() != null && event.getMember().getRoles().stream().noneMatch(x -> x.getIdLong() == 1321252725291483137L)) {
+                event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();
+            }
+        }
+    }
+
+    @Override
     public void onMessageContextInteraction(MessageContextInteractionEvent event) {
         if (event.getName().equalsIgnoreCase("Upload file to report")) {
             if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
-                if (!event.getUser().isBot() && event.getMessageChannel().getName().matches(Main.pattern)) {
-                    String userId = event.getMessageChannel().getName().split("-")[2];
-                    if (event.getUser().getId().equalsIgnoreCase(userId)) {
+                if (!event.getUser().isBot() && Main.isCrashReport(event.getChannelIdLong())) {
+
+                    var crashReport = Main.getCrashReportFromChanneldId(event.getChannelIdLong());
+
+                    if (crashReport == null) {
+                        log.error("This should not happen??????????????????");
+                        return;
+                    }
+
+                    if (event.getUser().getIdLong() == crashReport.getOwnerId()) {
                         if (event.getTarget().getAttachments().isEmpty()) {
                             event.reply("Seems like you selected a message without any file! Please select a .log or .dmp file!").setEphemeral(true).queue();
                         } else {
