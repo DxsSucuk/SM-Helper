@@ -30,6 +30,7 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,7 +39,7 @@ public class ComponentListener extends ListenerAdapter {
 
     Modal modalCache;
 
-    List<Long> timedOutUsers = new ArrayList<>();
+    HashMap<Long, Long> timedOutUsers = new HashMap<>();
 
     public ComponentListener() {
         getModalCache();
@@ -79,14 +80,17 @@ public class ComponentListener extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent event) {
         if (event.getComponentId().equals("open_report_modal")) {
             //event.deferReply(true).complete();
-            if (timedOutUsers.contains(event.getUser().getIdLong())) {
+
+            var executionTime = System.currentTimeMillis();
+            var systemTimeOfTimeout = timedOutUsers.getOrDefault(event.getUser().getIdLong(), -1L);
+
+            if (systemTimeOfTimeout != -1L && (systemTimeOfTimeout + Duration.ofSeconds(30).toMillis()) > executionTime) {
                 event.reply("You are on cooldown!").setEphemeral(true).queue();
                 return;
             }
 
-            timedOutUsers.add(event.getUser().getIdLong());
+            timedOutUsers.put(event.getUser().getIdLong(), executionTime);
 
-            ThreadUtil.createThread(x -> timedOutUsers.remove(event.getUser().getIdLong()), Duration.ofSeconds(30), false, false);
             event.replyModal(getModalCache()).queue();
         }
     }

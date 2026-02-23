@@ -1,7 +1,6 @@
 package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
-import de.presti.smphelper.utils.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
@@ -18,13 +17,12 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 @Slf4j
 public class MessageListener extends ListenerAdapter {
 
-    List<Long> timedOutUsers = new ArrayList<>();
+    HashMap<Long, Long> timedOutUsers = new HashMap<>();
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
@@ -66,11 +64,14 @@ public class MessageListener extends ListenerAdapter {
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         super.onMessageReceived(event);
         if (event.getChannel().getType() == ChannelType.TEXT && event.getChannel().asTextChannel().getParentCategoryIdLong() == Main.getRespondToMessageCategory()) {
-            if (timedOutUsers.contains(event.getAuthor().getIdLong())) return;
+            var executionTime = System.currentTimeMillis();
+            var systemTimeOfTimeout = timedOutUsers.getOrDefault(event.getAuthor().getIdLong(), -1L);
 
-            timedOutUsers.add(event.getAuthor().getIdLong());
+            if (systemTimeOfTimeout != -1L && (systemTimeOfTimeout + Duration.ofSeconds(30).toMillis()) > executionTime) {
+                return;
+            }
 
-            ThreadUtil.createThread(x -> timedOutUsers.remove(event.getAuthor().getIdLong()), Duration.ofSeconds(30), false, false);
+            timedOutUsers.put(event.getAuthor().getIdLong(), executionTime);
 
             String content = event.getMessage().getContentRaw().toLowerCase();
 
