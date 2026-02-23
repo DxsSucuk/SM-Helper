@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 
 @Slf4j
@@ -64,6 +65,7 @@ public class MessageListener extends ListenerAdapter {
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         super.onMessageReceived(event);
         if (event.getChannel().getType() == ChannelType.TEXT && event.getChannel().asTextChannel().getParentCategoryIdLong() == Main.getRespondToMessageCategory()) {
+            if (!event.getMessage().getEmbeds().isEmpty() || !event.getMessage().getAttachments().isEmpty()) return;
             var executionTime = System.currentTimeMillis();
             var systemTimeOfTimeout = timedOutUsers.getOrDefault(event.getAuthor().getIdLong(), -1L);
 
@@ -75,9 +77,14 @@ public class MessageListener extends ListenerAdapter {
 
             String content = event.getMessage().getContentRaw().toLowerCase();
 
+            String[] words = content.split("\\s+");
+
+            boolean hasWebHeadRole = event.getMember() != null && event.getMember().getRoles().stream().anyMatch(x -> x.getIdLong() == 1321252725291483137L);
+            boolean hasHigherRoleThanWebHead = event.getMember() != null && event.getGuild().getRoleById(1321252725291483137L).getPosition() < event.getMember().getRoles().getFirst().getPosition();
+
             if (content.contains("free") || content.contains("release")) {
                 event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
-            } else if (content.contains("help") && event.getMember() != null && event.getMember().getRoles().stream().noneMatch(x -> x.getIdLong() == 1321252725291483137L)) {
+            } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole && !hasHigherRoleThanWebHead) {
                 event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();
             }
         }
