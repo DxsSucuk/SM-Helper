@@ -1,6 +1,7 @@
 package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
+import de.presti.smphelper.utils.Config;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
@@ -24,42 +25,6 @@ import java.util.HashMap;
 public class MessageListener extends ListenerAdapter {
 
     HashMap<Long, Long> timedOutUsers = new HashMap<>();
-
-    @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-        super.onSlashCommandInteraction(event);
-        if (event.isFromGuild() && event.getMember().getId().equalsIgnoreCase(Main.getConfig().getDevUserId())) {
-            if (event.getName().equalsIgnoreCase("send")) {
-                var typMapping = event.getOption("typ");
-                var channelMapping = event.getOption("channel");
-
-                if (typMapping != null && channelMapping != null) {
-
-                    GuildMessageChannel channel = channelMapping.getAsChannel().asGuildMessageChannel();
-
-                    switch (typMapping.getAsInt()) {
-                        case 1 -> channel.sendMessageComponents(Main.createInitialMessageForReport()).useComponentsV2().queue();
-                        case 2 -> channel.sendMessageComponents(Main.createCommonIssues()).useComponentsV2().queue();
-                    }
-
-                    event.reply("Work done!").setEphemeral(true).queue();
-                } else {
-                    event.reply("Invalid args.").setEphemeral(true).queue();
-                }
-            } else if (event.getName().equalsIgnoreCase("forum")) {
-                var channelMapping = event.getOption("channel");
-                if (channelMapping != null) {
-                    ForumChannel channel = channelMapping.getAsChannel().asForumChannel();
-                    Main.setTags(channel);
-                    event.reply("Work done!").setEphemeral(true).queue();
-                } else {
-                    event.reply("Invalid args.").setEphemeral(true).queue();
-                }
-            }
-        } else {
-            event.reply("Not allowed!").setEphemeral(true).queue();
-        }
-    }
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {

@@ -15,11 +15,29 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>reposilite-repository-snapshots</id>
+            <name>freya02 repository</name>
+            <url>https://repo.freya02.dev/snapshots</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>6.1.0</version>
+            <version>6.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.freya022</groupId>
+            <artifactId>BotCommands</artifactId>
+            <version>350121d5164b00e8ec46041addaaf3ab3bac223e-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.freya022</groupId>
+            <artifactId>BotCommands-typesafe-messages-core</artifactId>
+            <version>350121d5164b00e8ec46041addaaf3ab3bac223e-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
