@@ -80,11 +80,11 @@ public class MessageListener extends ListenerAdapter {
             String[] words = content.split("\\s+");
 
             boolean hasWebHeadRole = event.getMember() != null && event.getMember().getRoles().stream().anyMatch(x -> x.getIdLong() == 1321252725291483137L);
-            boolean hasHigherRoleThanWebHead = event.getMember() != null && event.getGuild().getRoleById(1321252725291483137L).getPosition() < event.getMember().getRoles().getFirst().getPosition();
+            //boolean hasHigherRoleThanWebHead = event.getMember() != null && event.getGuild().getRoleById(1321252725291483137L).getPosition() < event.getMember().getRoles().getFirst().getPosition();
 
             if (content.contains("free") || content.contains("release")) {
                 event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
-            } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole && !hasHigherRoleThanWebHead) {
+            } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
                 event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();
             }
         }
