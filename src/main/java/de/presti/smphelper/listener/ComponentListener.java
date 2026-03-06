@@ -1,8 +1,7 @@
 package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
-import de.presti.smphelper.utils.CrashReport;
-import de.presti.smphelper.utils.ThreadUtil;
+import de.presti.smphelper.dto.CrashReport;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.attachmentupload.AttachmentUpload;

@@ -1,12 +1,11 @@
 package de.presti.smphelper;
 
+import de.presti.smphelper.dto.Punishments;
 import de.presti.smphelper.utils.Config;
 import io.github.freya022.botcommands.api.core.BotCommands;
-import de.presti.smphelper.utils.CrashReport;
+import de.presti.smphelper.dto.CrashReport;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
@@ -18,8 +17,6 @@ import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 import java.io.InputStream;
@@ -46,6 +43,9 @@ public class Main {
     @Getter
     private static List<CrashReport> crashReports = new ArrayList<>();
 
+    @Getter
+    private static List<Punishments> punishments = new ArrayList<>();
+
     public static void main(String[] args) {
         if (args.length == 0) {
             log.error("Please provide a command line argument");
@@ -63,8 +63,13 @@ public class Main {
         respondToMessageCategory = Config.getInstance().getRespondToMessageCategory();
         currentIndex = Config.getInstance().getCurrentIndex();
 
-        if (Config.getInstance().getReportList() != null)
+        if (Config.getInstance().getReportList() != null) {
             crashReports.addAll(Config.getInstance().getReportList());
+        }
+
+        if (Config.getInstance().getPunishmentsList() != null) {
+            punishments.addAll(Config.getInstance().getPunishmentsList());
+        }
 
         log.info("Loaded config!");
 
@@ -190,6 +195,32 @@ public class Main {
             crashReports.add(crashReport);
             saveCrashReports();
         }
+    }
+
+    public static Punishments getPunishmentOfUser(long userId) {
+        return getPunishments().stream().filter(x -> x.getUserId() == userId).findFirst().orElse(null);
+    }
+
+    public static Punishments getPunishmentOfUserOrDefault(long userId, long defaultViolation) {
+        return getPunishments().stream().filter(x -> x.getUserId() == userId).findFirst().orElse(new Punishments(userId, defaultViolation));
+
+    }
+
+    public static void addPunishment(Punishments punishments) {
+        var existingPunishment = getPunishmentOfUser(punishments.getUserId());
+        if (existingPunishment != null) {
+            var index = getPunishments().indexOf(existingPunishment);
+            getPunishments().set(index, punishments);
+        } else {
+            getPunishments().add(punishments);
+        }
+
+        savePunishments();
+    }
+
+    public static void savePunishments() {
+        Config.getInstance().setPunishmentsList(getPunishments());
+        Config.getInstance().saveConfig();
     }
 
     public static void saveCrashReports() {

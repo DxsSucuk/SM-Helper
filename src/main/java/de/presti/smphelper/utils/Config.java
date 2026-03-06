@@ -2,6 +2,8 @@ package de.presti.smphelper.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.presti.smphelper.dto.CrashReport;
+import de.presti.smphelper.dto.Punishments;
 import io.github.freya022.botcommands.api.core.service.annotations.BService;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +31,12 @@ public class Config {
     long respondToMessageCategory;
     boolean sendInitialMessage;
     boolean setInitialForumTag;
+    long minViolationsUntilTimeout;
     long currentIndex;
     long devUserId;
 
     List<CrashReport> reportList;
+    List<Punishments> punishmentsList;
 
 
     @BService

@@ -31,14 +31,16 @@ public class MessageListener extends ListenerAdapter {
         super.onMessageReceived(event);
         if (event.getChannel().getType() == ChannelType.TEXT && event.getChannel().asTextChannel().getParentCategoryIdLong() == Main.getRespondToMessageCategory()) {
             if (!event.getMessage().getEmbeds().isEmpty() || !event.getMessage().getAttachments().isEmpty()) return;
-            var executionTime = System.currentTimeMillis();
-            var systemTimeOfTimeout = timedOutUsers.getOrDefault(event.getAuthor().getIdLong(), -1L);
 
-            if (systemTimeOfTimeout != -1L && (systemTimeOfTimeout + Duration.ofSeconds(30).toMillis()) > executionTime) {
+            var systemTimeOfTimeout = timedOutUsers.getOrDefault(event.getAuthor().getIdLong(), -1L);
+            var timeOutDifference = System.currentTimeMillis() - systemTimeOfTimeout;
+
+            if (systemTimeOfTimeout != -1L && timeOutDifference < Duration.ofSeconds(30).toMillis()) {
+                log.info("User -> {} ignored because of timeout.", event.getAuthor().getName());
                 return;
             }
 
-            timedOutUsers.put(event.getAuthor().getIdLong(), executionTime);
+            timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
 
             String content = event.getMessage().getContentRaw().toLowerCase();
 
@@ -48,6 +50,19 @@ public class MessageListener extends ListenerAdapter {
             //boolean hasHigherRoleThanWebHead = event.getMember() != null && event.getGuild().getRoleById(1321252725291483137L).getPosition() < event.getMember().getRoles().getFirst().getPosition();
 
             if (content.contains("free") || content.contains("release")) {
+                var punishment = Main.getPunishmentOfUserOrDefault(event.getAuthor().getIdLong(), 0);
+                punishment.addViolation(1);
+
+                if (punishment.getPunishmentCount() > Config.getInstance().getMinViolationsUntilTimeout()) {
+                    var minuteOfTimeOut = Math.max(1, punishment.getPunishmentCount() - Config.getInstance().getMinViolationsUntilTimeout());
+                    if (event.getGuild().getSelfMember().canInteract(event.getMember())) {
+                        event.getMember().timeoutFor(Duration.ofMinutes(minuteOfTimeOut)).reason("Triggered the free release message " + punishment.getPunishmentCount() + " times!").queue();
+                    }
+                }
+
+                Main.addPunishment(punishment);
+
+                log.info("User -> {} triggered release.", event.getMember().getNickname());
                 event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
             } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
                 event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();

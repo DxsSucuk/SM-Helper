@@ -1,4 +1,4 @@
-package de.presti.smphelper.utils;
+package de.presti.smphelper.dto;
 
 import lombok.*;
 
