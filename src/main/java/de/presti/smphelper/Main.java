@@ -47,12 +47,6 @@ public class Main {
     private static List<Punishments> punishments = new ArrayList<>();
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            log.error("Please provide a command line argument");
-            log.error("Usage: java -jar smhelper.jar <bot-token>");
-            return;
-        }
-
         Config.getInstance();
 
         guildId = Config.getInstance().getGuildId();
@@ -75,11 +69,11 @@ public class Main {
 
         BotCommands.create(builder -> {
             builder.addPredefinedOwners(Config.getInstance().getDevUserId());
+            builder.addSearchPath("de.presti.smphelper.utils");
+            builder.addSearchPath("de.presti.smphelper.service");
             builder.addSearchPath("de.presti.smphelper.commands");
 
-            builder.textCommands(textCommands -> {
-                textCommands.usePingAsPrefix(true);
-            });
+            builder.textCommands(textCommands -> textCommands.usePingAsPrefix(true));
         });
 
         log.info("JDA started!");

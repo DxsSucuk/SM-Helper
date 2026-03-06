@@ -62,7 +62,7 @@ public class MessageListener extends ListenerAdapter {
 
                 Main.addPunishment(punishment);
 
-                log.info("User -> {} triggered release.", event.getMember().getNickname());
+                log.info("User -> {} triggered release.", event.getMember().getEffectiveName());
                 event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
             } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
                 event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();

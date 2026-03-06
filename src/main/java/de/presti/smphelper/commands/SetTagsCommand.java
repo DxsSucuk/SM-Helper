@@ -7,14 +7,13 @@ import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashE
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.JDASlashCommand;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.SlashOption;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 @Command
 public class SetTagsCommand {
-    @JDASlashCommand(name = "send", description = "Send predefined messages.")
+    @JDASlashCommand(name = "set-tags", description = "Set the tags of a forumchannel.")
     public void onSetTagRequest(
             GuildSlashEvent event,
-            @SlashOption(description = "What channel should be used.", usePredefinedChoices = true) ForumChannel channel
+            @SlashOption(description = "What channel should be used.") ForumChannel channel
     ) {
         if (event.getMember().getIdLong() != Config.getInstance().getDevUserId()) {
             event.reply("Not allowed!").setEphemeral(true).queue();
