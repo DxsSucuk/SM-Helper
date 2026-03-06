@@ -222,7 +222,7 @@ public class ComponentListener extends ListenerAdapter {
 
             Main.setCurrentIndex(Main.getCurrentIndex() + 1);
 
-            forumChannel.createForumPost(description.substring(0, Math.min(description.length() - 1, 16)),
+            forumChannel.createForumPost(description.substring(0, Math.min(description.length() - 1, 100)),
                     new MessageCreateBuilder().addComponents(container).useComponentsV2().build()).queue(x -> {
                 x.getThreadChannel().getManager().setAppliedTags(forumChannel.getAvailableTagsByName("open", true)).queue();
                 x.getThreadChannel().pinMessageById(x.getThreadChannel().getLatestMessageId()).queue();
