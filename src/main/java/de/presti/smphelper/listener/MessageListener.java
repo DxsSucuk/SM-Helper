@@ -40,8 +40,6 @@ public class MessageListener extends ListenerAdapter {
                 return;
             }
 
-            timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
-
             String content = event.getMessage().getContentRaw().toLowerCase();
 
             String[] words = content.split("\\s+");
@@ -64,8 +62,10 @@ public class MessageListener extends ListenerAdapter {
 
                 log.info("User -> {} triggered release.", event.getMember().getEffectiveName());
                 event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
+                timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
             } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
                 event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();
+                timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
             }
         }
     }
