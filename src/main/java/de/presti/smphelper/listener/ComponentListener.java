@@ -122,10 +122,14 @@ public class ComponentListener extends ListenerAdapter {
 
             var playersComponent = event.getValue("players");
 
-            List<User> players = new ArrayList<>(List.of(event.getUser()));
+            List<User> players = new ArrayList<>();
 
             if (playersComponent != null && playersComponent.getType() == Component.Type.USER_SELECT) {
                 players.addAll(playersComponent.getAsMentions().getUsers());
+            }
+
+            if (!players.contains(event.getUser())) {
+                players.add(event.getUser());
             }
 
             FileDisplay logDisplay = FileDisplay.fromFile(FileUpload.fromData("Sample Log".getBytes(StandardCharsets.UTF_8), "placeholder.log")).withUniqueId(1001);
