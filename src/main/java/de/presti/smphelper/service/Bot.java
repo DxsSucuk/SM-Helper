@@ -2,6 +2,7 @@ package de.presti.smphelper.service;
 
 import de.presti.smphelper.listener.ComponentListener;
 import de.presti.smphelper.listener.MessageListener;
+import de.presti.smphelper.listener.ReadyListener;
 import de.presti.smphelper.utils.Config;
 import io.github.freya022.botcommands.api.core.JDAService;
 import io.github.freya022.botcommands.api.core.events.BReadyEvent;
@@ -43,7 +44,7 @@ public class Bot extends JDAService {
                 .setEnabledIntents(getIntents())
                 .enableCache(getCacheFlags())
                 .setEventManager(eventManager)
-                .addEventListeners(new ComponentListener(), new MessageListener())
+                .addEventListeners(new ComponentListener(), new MessageListener(), new ReadyListener())
                 .build();
     }
 }
