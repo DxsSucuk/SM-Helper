@@ -36,7 +36,7 @@ public class MessageListener extends ListenerAdapter {
             var timeOutDifference = System.currentTimeMillis() - systemTimeOfTimeout;
 
             if (systemTimeOfTimeout != -1L && timeOutDifference < Duration.ofSeconds(30).toMillis()) {
-                log.info("User -> {} ignored because of timeout.", event.getAuthor().getName());
+                log.info("User -> {} ignored because of timeout.", event.getMember().getEffectiveName());
                 return;
             }
 
@@ -55,13 +55,20 @@ public class MessageListener extends ListenerAdapter {
                     var minuteOfTimeOut = Math.max(1, punishment.getPunishmentCount() - Config.getInstance().getMinViolationsUntilTimeout());
                     if (event.getGuild().getSelfMember().canInteract(event.getMember())) {
                         event.getMember().timeoutFor(Duration.ofMinutes(minuteOfTimeOut)).reason("Triggered the free release message " + punishment.getPunishmentCount() + " times!").queue();
+                        log.info("Timeout user -> {}", event.getMember().getEffectiveName());
+                    } else {
+                        log.info("Can't timeout -> {}", event.getMember().getEffectiveName());
                     }
                 }
 
                 Main.addPunishment(punishment);
 
                 log.info("User -> {} triggered release.", event.getMember().getEffectiveName());
-                event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
+                try {
+                    event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
+                } catch (Exception exception) {
+                    log.warn("Failed to reply with message because!", exception);
+                }
                 timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
             } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
                 event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();
