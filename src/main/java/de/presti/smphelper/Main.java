@@ -35,7 +35,11 @@ public class Main {
     private static long initialChannel = 1116305428050104340L;
 
     @Getter
-    private static long forumChannelId = 1409833736756793425L, testerForumChannelId = 1475510715120095325L, testerReportChannelId = 1325356201076330496L, respondToMessageCategory = 1321252725291483137L;
+    private static long forumChannelId = 1409833736756793425L,
+            testerForumChannelId = 1475510715120095325L,
+            testerReportChannelId = 1325356201076330496L,
+            respondToMessageCategory = 1321252725291483137L,
+            temporalVoiceCategory = 1324598005944422400L;
 
     @Getter
     private static long currentIndex = 0;
@@ -45,6 +49,9 @@ public class Main {
 
     @Getter
     private static List<Punishments> punishments = new ArrayList<>();
+
+    @Getter
+    private static List<Long> tempVoiceChannelIds = new ArrayList<>();
 
     public static void main(String[] args) {
         Config.getInstance();
@@ -56,6 +63,7 @@ public class Main {
         testerReportChannelId = Config.getInstance().getTesterReportChannelId();
         respondToMessageCategory = Config.getInstance().getRespondToMessageCategory();
         currentIndex = Config.getInstance().getCurrentIndex();
+        temporalVoiceCategory = Config.getInstance().getTemporalVoiceCategory();
 
         if (Config.getInstance().getReportList() != null) {
             crashReports.addAll(Config.getInstance().getReportList());
@@ -63,6 +71,10 @@ public class Main {
 
         if (Config.getInstance().getPunishmentsList() != null) {
             punishments.addAll(Config.getInstance().getPunishmentsList());
+        }
+
+        if (Config.getInstance().getTempVoiceChannelIds() != null) {
+            tempVoiceChannelIds.addAll(Config.getInstance().getTempVoiceChannelIds());
         }
 
         log.info("Loaded config!");

@@ -34,9 +34,11 @@ public class Config {
     long minViolationsUntilTimeout;
     long currentIndex;
     long devUserId;
+    long temporalVoiceCategory;
 
     List<CrashReport> reportList;
     List<Punishments> punishmentsList;
+    List<Long> tempVoiceChannelIds;
 
 
     @BService
