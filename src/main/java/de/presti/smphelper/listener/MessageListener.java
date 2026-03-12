@@ -30,8 +30,6 @@ public class MessageListener extends ListenerAdapter {
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         super.onMessageReceived(event);
         if (event.getChannel().getType() == ChannelType.TEXT && event.getChannel().asTextChannel().getParentCategoryIdLong() == Main.getRespondToMessageCategory() && event.getChannel().canTalk()) {
-            if (!event.getMessage().getEmbeds().isEmpty() || !event.getMessage().getAttachments().isEmpty()) return;
-
             var systemTimeOfTimeout = timedOutUsers.getOrDefault(event.getAuthor().getIdLong(), -1L);
             var timeOutDifference = System.currentTimeMillis() - systemTimeOfTimeout;
 
@@ -41,13 +39,19 @@ public class MessageListener extends ListenerAdapter {
             }
 
             String content = event.getMessage().getContentRaw().toLowerCase();
-
             String[] words = content.split("\\s+");
+
+            String cleanedUpMessage = content.replaceAll("\\s+", " ").replace("1", "i")
+                    .replace("4", "a").replace("3", "e")
+                    .replace("5", "s").replace("7", "l")
+                    .toLowerCase().trim();
+
+            boolean hasTriggeredFreeRelease = Main.getReleaseTrigger().contains(cleanedUpMessage);
 
             boolean hasWebHeadRole = event.getMember() != null && event.getMember().getRoles().stream().anyMatch(x -> x.getIdLong() == 1321252725291483137L);
             //boolean hasHigherRoleThanWebHead = event.getMember() != null && event.getGuild().getRoleById(1321252725291483137L).getPosition() < event.getMember().getRoles().getFirst().getPosition();
 
-            if (content.contains("free") || content.contains("release")) {
+            if (hasTriggeredFreeRelease) {
                 var punishment = Main.getPunishmentOfUserOrDefault(event.getAuthor().getIdLong(), 0);
                 punishment.addViolation(1);
 
@@ -70,7 +74,8 @@ public class MessageListener extends ListenerAdapter {
                     log.warn("Failed to reply with message because!", exception);
                 }
                 timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
-            } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) && Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
+            } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) &&
+                    Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
                 event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();
                 timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
             }

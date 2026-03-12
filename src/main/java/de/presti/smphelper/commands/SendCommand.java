@@ -32,8 +32,8 @@ public class SendCommand implements SlashOptionChoiceProvider {
     @JDASlashCommand(name = "send", description = "Send predefined messages.")
     public void onSendRequest(
             GuildSlashEvent event,
-            @SlashOption(description = "What message should be sent.") int action,
-            @SlashOption(description = "What channel should be used.") TextChannel channel
+            @SlashOption(description = "What message should be sent.", name = "action") int action,
+            @SlashOption(description = "What channel should be used.", name = "channel") TextChannel channel
     ) {
         if (event.getMember().getIdLong() != Config.getInstance().getDevUserId()) {
             event.reply("Not allowed!").setEphemeral(true).queue();

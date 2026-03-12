@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
@@ -38,7 +40,8 @@ public class Config {
 
     List<CrashReport> reportList;
     List<Punishments> punishmentsList;
-    List<Long> tempVoiceChannelIds;
+    HashMap<Long, Long> tempVoiceChannelAndOwnerIds;
+    List<String> releaseTrigger;
 
 
     @BService

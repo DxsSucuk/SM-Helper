@@ -40,7 +40,7 @@ public class Bot extends JDAService {
     @Override
     public void createJDA(@NotNull BReadyEvent event, @NotNull IEventManager eventManager) {
         createLight(config.getBotToken())
-                .setActivity(Activity.playing("Marvel's Spider-man Multiplayer"))
+                .setActivity(Activity.playing("Marvel's Spider-Man Multiplayer"))
                 .setEnabledIntents(getIntents())
                 .enableCache(getCacheFlags())
                 .setEventManager(eventManager)

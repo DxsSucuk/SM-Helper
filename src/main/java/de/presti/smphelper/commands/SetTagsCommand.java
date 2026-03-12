@@ -10,10 +10,10 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 
 @Command
 public class SetTagsCommand {
-    @JDASlashCommand(name = "set-tags", description = "Set the tags of a forumchannel.")
+    @JDASlashCommand(name = "set-tags", description = "Set the tags of a forum-channel.")
     public void onSetTagRequest(
             GuildSlashEvent event,
-            @SlashOption(description = "What channel should be used.") ForumChannel channel
+            @SlashOption(description = "What channel should be used.", name = "channel") ForumChannel channel
     ) {
         if (event.getMember().getIdLong() != Config.getInstance().getDevUserId()) {
             event.reply("Not allowed!").setEphemeral(true).queue();

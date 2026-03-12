@@ -18,6 +18,7 @@ import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTagSnowflake;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -138,6 +139,7 @@ public class ComponentListener extends ListenerAdapter {
             //FileDisplay clipDisplay = FileDisplay.fromFile(FileUpload.fromData("Clip".getBytes(StandardCharsets.UTF_8), "placeholder.mp4")).withUniqueId(1003);
 
             boolean replacedDump = false, replacedLog = false;
+            String offset = "";
 
             try {
                 if (logInput != null && logInput.getType() == Component.Type.FILE_UPLOAD && !logInput.getAsAttachmentList().isEmpty()) {
@@ -146,10 +148,16 @@ public class ComponentListener extends ListenerAdapter {
                         event.getInteraction().getHook().sendMessage("Extension of the log file is not .log").queue();
                         return;
                     }
-                    logDisplay = FileDisplay.fromFile(FileUpload.fromData(logFile.getProxy().download().join(), logFile.getFileName())).withUniqueId(1001);
+
+                    try (var inputStream = logFile.getProxy().download().join()) {
+                        byte[] content = inputStream.readAllBytes();
+                        offset = Main.getOffsetFromLog(new String(content));
+                        logDisplay = FileDisplay.fromFile(FileUpload.fromData(content, logFile.getFileName())).withUniqueId(1001);
+                    }
                     replacedLog = true;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 if (dumpInput != null && dumpInput.getType() == Component.Type.FILE_UPLOAD && !dumpInput.getAsAttachmentList().isEmpty()) {
@@ -161,7 +169,8 @@ public class ComponentListener extends ListenerAdapter {
                     dumpDisplay = FileDisplay.fromFile(FileUpload.fromData(dumpFile.getProxy().download().join(), dumpFile.getFileName())).withUniqueId(1002);
                     replacedDump = true;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             List<ContainerChildComponent> components = new ArrayList<>();
 
@@ -172,17 +181,15 @@ public class ComponentListener extends ListenerAdapter {
                         TextDisplay.of("They will automatically be added to this overview!")));
             }
 
-            if (players.isEmpty()) {
-                if (!components.isEmpty()) {
-                    components.add(Separator.createDivider(Separator.Spacing.SMALL));
-                } else {
-                    components.add(Separator.createDivider(Separator.Spacing.LARGE));
-                }
-                components.addAll(List.of(
-                        TextDisplay.of("## What now?"),
-                        TextDisplay.of("If you played with multiple people you should probably ping them here!"),
-                        TextDisplay.of("Just so we can keep track of them! Otherwise patiently wait!")));
+            if (!components.isEmpty()) {
+                components.add(Separator.createDivider(Separator.Spacing.SMALL));
+            } else {
+                components.add(Separator.createDivider(Separator.Spacing.LARGE));
             }
+            components.addAll(List.of(
+                    TextDisplay.of("## What now?"),
+                    TextDisplay.of("If you played with multiple people you should probably ping them here!"),
+                    TextDisplay.of("Just so we can keep track of them! Otherwise patiently wait!")));
 
             List<ContainerChildComponent> childComponents = new ArrayList<>(List.of(
                     Section.of(
@@ -202,19 +209,15 @@ public class ComponentListener extends ListenerAdapter {
                     logDisplay,
                     dumpDisplay));
 
-            if (!components.isEmpty()) {
-                childComponents.addAll(components);
-            }
+            childComponents.addAll(components);
 
             childComponents.addAll(List.of(Separator.createDivider(Separator.Spacing.LARGE),
-                            TextDisplay.of("## Reported by"),
-                            TextDisplay.of(event.getMember().getAsMention())));
+                    TextDisplay.of("## Reported by"),
+                    TextDisplay.of(event.getMember().getAsMention())));
 
-            if (!players.isEmpty()) {
-                childComponents.addAll(List.of(Separator.createDivider(Separator.Spacing.SMALL),
-                        TextDisplay.of("## Part of the Session"),
-                        TextDisplay.of(String.join(" ", players.stream().map(User::getAsMention).toList()))));
-            }
+            childComponents.addAll(List.of(Separator.createDivider(Separator.Spacing.SMALL),
+                    TextDisplay.of("## Part of the Session"),
+                    TextDisplay.of(String.join(" ", players.stream().map(User::getAsMention).toList()))));
 
             Container container = Container.of(childComponents);
 
@@ -226,15 +229,27 @@ public class ComponentListener extends ListenerAdapter {
 
             Main.setCurrentIndex(Main.getCurrentIndex() + 1);
 
+            String finalOffset = offset;
             forumChannel.createForumPost(description.substring(0, Math.min(description.length() - 1, 100)),
                     new MessageCreateBuilder().addComponents(container).useComponentsV2().build()).queue(x -> {
-                x.getThreadChannel().getManager().setAppliedTags(forumChannel.getAvailableTagsByName("open", true)).queue();
+                List<ForumTagSnowflake> tags = new ArrayList<>();
+                if (finalOffset.isBlank()) {
+                    var existingTags = forumChannel.getAvailableTagsByName(finalOffset, true);
+                    if (existingTags.isEmpty()) {
+                        Main.addTag(forumChannel, finalOffset);
+                        tags.addAll(forumChannel.getAvailableTagsByName(finalOffset, true));
+                    } else {
+                        tags.addAll(existingTags);
+                    }
+                }
+
+                tags.addAll(forumChannel.getAvailableTagsByName("open", true));
+                x.getThreadChannel().getManager().setAppliedTags(tags).queue();
                 x.getThreadChannel().pinMessageById(x.getThreadChannel().getLatestMessageId()).queue();
                 x.getThreadChannel().addThreadMember(event.getMember()).queue();
                 x.getThreadChannel().getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_1_WEEK).queue();
                 Main.addCrashReport(new CrashReport(x.getThreadChannel().getIdLong(), event.getUser().getIdLong()));
                 event.getInteraction().getHook().sendMessage("Crash reported, thank you very much for the help! -> " + x.getThreadChannel().getAsMention()).queue();
-                x.getThreadChannel().getManager().setAppliedTags(forumChannel.getAvailableTagsByName("Open", true)).queue();
             });
 
         }

@@ -20,9 +20,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 @Getter
@@ -45,13 +43,16 @@ public class Main {
     private static long currentIndex = 0;
 
     @Getter
-    private static List<CrashReport> crashReports = new ArrayList<>();
+    private final static List<CrashReport> crashReports = new ArrayList<>();
 
     @Getter
-    private static List<Punishments> punishments = new ArrayList<>();
+    private final static List<Punishments> punishments = new ArrayList<>();
 
     @Getter
-    private static List<Long> tempVoiceChannelIds = new ArrayList<>();
+    private static HashMap<Long, Long> tempVoiceChannelAndOwnerIds = new HashMap<>();
+
+    @Getter
+    private final static List<String> releaseTrigger = new ArrayList<>();
 
     public static void main(String[] args) {
         Config.getInstance();
@@ -73,8 +74,12 @@ public class Main {
             punishments.addAll(Config.getInstance().getPunishmentsList());
         }
 
-        if (Config.getInstance().getTempVoiceChannelIds() != null) {
-            tempVoiceChannelIds.addAll(Config.getInstance().getTempVoiceChannelIds());
+        if (Config.getInstance().getTempVoiceChannelAndOwnerIds() != null) {
+            tempVoiceChannelAndOwnerIds = new HashMap<>(Config.getInstance().getTempVoiceChannelAndOwnerIds());
+        }
+
+        if (Config.getInstance().getReleaseTrigger() != null) {
+            releaseTrigger.addAll(Config.getInstance().getReleaseTrigger());
         }
 
         log.info("Loaded config!");
@@ -92,10 +97,36 @@ public class Main {
     }
 
     public static void setTags(ForumChannel channel) {
-        channel.getManager().setAvailableTags(List.of(
-                new ForumTagData("Open").setModerated(true).setEmoji(Emoji.fromUnicode("🟩")),
-                new ForumTagData("Working on fix").setModerated(true).setEmoji(Emoji.fromUnicode("🟧")),
-                new ForumTagData("Closed").setModerated(true).setEmoji(Emoji.fromUnicode("🟥")))).queue();
+        List<ForumTagData> toAdd = new ArrayList<>(channel.getAvailableTags().stream().map(ForumTagData::from).toList());
+
+        if (toAdd.stream().noneMatch(x -> x.getName().equalsIgnoreCase("open"))) {
+            toAdd.add(new ForumTagData("Open").setEmoji(Emoji.fromUnicode("🟩")).setModerated(true));
+        }
+
+        if (toAdd.stream().noneMatch(x -> x.getName().equalsIgnoreCase("Working on fix"))) {
+            toAdd.add(new ForumTagData("Working on fix").setEmoji(Emoji.fromUnicode("🟧")).setModerated(true));
+        }
+
+        if (toAdd.stream().noneMatch(x -> x.getName().equalsIgnoreCase("closed"))) {
+            toAdd.add(new ForumTagData("Closed").setEmoji(Emoji.fromUnicode("🟥")).setModerated(true));
+        }
+
+        channel.getManager().setAvailableTags(toAdd).queue();
+    }
+
+    public static void addTag(ForumChannel channel, String tagName) {
+        List<ForumTagData> toAdd = new ArrayList<>(channel.getAvailableTags().stream().map(ForumTagData::from).toList());
+        if (toAdd.stream().noneMatch(x -> x.getName().equalsIgnoreCase(tagName))) {
+            toAdd.add(new ForumTagData(tagName).setEmoji(Emoji.fromUnicode("💥")).setModerated(true));
+        }
+        channel.getManager().setAvailableTags(toAdd).complete();
+    }
+
+    public static String getOffsetFromLog(String log) {
+        List<String> allFrameOffsets = Arrays.stream(log.split("\n"))
+                .filter(x -> x.contains("Frame") && x.contains("Spider-Man.exe+")).toList();
+
+        return allFrameOffsets.getFirst().split("Spider-Man.exe+")[1].trim();
     }
 
     public static Container createInitialMessageForReport() {
@@ -196,13 +227,6 @@ public class Main {
         Config.getInstance().saveConfig();
     }
 
-    public static void addCrashReport(CrashReport crashReport) {
-        if (getCrashReports().stream().noneMatch(x -> x.getChannelId() == crashReport.getChannelId())) {
-            crashReports.add(crashReport);
-            saveCrashReports();
-        }
-    }
-
     public static Punishments getPunishmentOfUser(long userId) {
         return getPunishments().stream().filter(x -> x.getUserId() == userId).findFirst().orElse(null);
     }
@@ -229,6 +253,13 @@ public class Main {
         Config.getInstance().saveConfig();
     }
 
+    public static void addCrashReport(CrashReport crashReport) {
+        if (getCrashReports().stream().noneMatch(x -> x.getChannelId() == crashReport.getChannelId())) {
+            crashReports.add(crashReport);
+            saveCrashReports();
+        }
+    }
+
     public static void saveCrashReports() {
         Config.getInstance().setReportList(getCrashReports());
         Config.getInstance().saveConfig();
@@ -242,6 +273,25 @@ public class Main {
         var report = getCrashReports().stream().filter(x -> x.getChannelId() == channelId).findFirst();
         return report.orElse(null);
 
+    }
+
+    public static void addReleaseTrigger(String trigger) {
+        if (!releaseTrigger.contains(trigger.toLowerCase())) {
+            releaseTrigger.add(trigger.toLowerCase());
+        }
+
+        saveReleaseTrigger();
+    }
+
+    public static void removeReleaseTrigger(String trigger) {
+        releaseTrigger.remove(trigger.toLowerCase());
+
+        saveReleaseTrigger();
+    }
+
+    public static void saveReleaseTrigger() {
+        Config.getInstance().setReleaseTrigger(getReleaseTrigger());
+        Config.getInstance().saveConfig();
     }
 
     public static FileUpload getResourceAsFileUpload(String path) {
