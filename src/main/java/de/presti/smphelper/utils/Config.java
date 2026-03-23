@@ -37,6 +37,7 @@ public class Config {
     long currentIndex;
     long devUserId;
     long temporalVoiceCategory;
+    long lobbyShareChannel;
 
     List<CrashReport> reportList;
     List<Punishments> punishmentsList;

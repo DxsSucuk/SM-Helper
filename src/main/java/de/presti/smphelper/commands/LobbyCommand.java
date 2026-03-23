@@ -1,7 +1,11 @@
 package de.presti.smphelper.commands;
 
+import de.presti.smphelper.Main;
+import de.presti.smphelper.utils.Config;
 import io.github.freya022.botcommands.api.commands.CommandPath;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.TopLevelSlashCommandData;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import io.github.freya022.botcommands.api.commands.annotations.Command;
 import io.github.freya022.botcommands.api.commands.annotations.Cooldown;
@@ -16,12 +20,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.Color;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 
 @Command
-@Cooldown(cooldown = 5, unit = ChronoUnit.SECONDS)
+@Cooldown(cooldown = 10, unit = ChronoUnit.SECONDS)
 public class LobbyCommand implements SlashOptionChoiceProvider {
 
+    @Cooldown(cooldown = 30, unit = ChronoUnit.SECONDS)
     @TopLevelSlashCommandData(description = "Host lobbies!")
     @JDASlashCommand(name = "lobby", subcommand = "create", description = "Create a lobby!")
     public void onLobbyRequest(
@@ -34,10 +40,13 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
 
     ) {
         event.deferReply(true).queue();
+
+        String lobbyName = event.getUser().getGlobalName() + "'s lobby";
+
         boolean usesVPN = !(vpnSoftware == null || vpnSoftware.equalsIgnoreCase("none"));
         EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setTitle(event.getUser().getGlobalName() + "'s lobby");
-        embedBuilder.setColor(Color.GREEN);
+        embedBuilder.setTitle(lobbyName);
+        embedBuilder.setColor(privateLobby ? Color.GREEN : Color.RED);
         embedBuilder.addField("**Location**", location, true);
         embedBuilder.addField("**Mods**", modList, true);
         if (usesVPN) {
@@ -46,8 +55,78 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
             embedBuilder.addField("**Software**", vpnSoftware, false);
             embedBuilder.addField("**Login**", vpnLogin, false);
         }
-        // TODO:: make a thingy with buttons.
-        event.getInteraction().getHook().sendMessage("Work done!").queue();
+
+        event.getJDA().getCategoryById(Config.getInstance().getTemporalVoiceCategory()).createVoiceChannel(lobbyName).queue(channel -> {
+            Main.getTempVoiceChannelAndOwnerIds().put(channel.getIdLong(), event.getMember().getIdLong());
+            event.getJDA().getTextChannelById(Config.getInstance().getLobbyShareChannel()).sendMessageEmbeds(embedBuilder.build()).queue();
+            if (privateLobby) {
+                channel.getManager().putRolePermissionOverride(channel.getGuild().getPublicRole().getIdLong(), null, Collections.singleton(Permission.VOICE_CONNECT)).queue();
+                channel.getManager().putMemberPermissionOverride(event.getMember().getIdLong(), Collections.singleton(Permission.VOICE_CONNECT), null).queue();
+            }
+
+            if (event.getMember().getVoiceState() != null && event.getMember().getVoiceState().inAudioChannel()) {
+                event.getGuild().moveVoiceMember(event.getMember(), channel).queue();
+            }
+            event.getInteraction().getHook().sendMessage("Your lobby has been created feel free to join -> " + channel.getAsMention()).queue();
+        });
+    }
+
+    @JDASlashCommand(name = "lobby", subcommand = "invite", description = "Invite people to your lobby!")
+    public void onLobbyInvite(
+            GuildSlashEvent event,
+            @SlashOption(description = "Who would you like to invite?", name = "invite") List<Member> inviteMembers
+    ) {
+        event.deferReply(true).queue();
+
+        if (event.getMember().getVoiceState() != null && event.getMember().getVoiceState().inAudioChannel() && event.getMember().getVoiceState().getChannel() != null) {
+            var channel = event.getMember().getVoiceState().getChannel();
+            var ownerId = Main.getTempVoiceChannelAndOwnerIds().get(channel.getIdLong());
+            if (event.getMember().getIdLong() == ownerId) {
+                var isPrivate = channel.getRolePermissionOverrides().stream().anyMatch(x -> x.isRoleOverride() && x.getRole().isPublicRole() && x.getDenied().contains(Permission.VOICE_CONNECT));
+
+                if (isPrivate) {
+                    for (Member member : inviteMembers) {
+                        channel.getManager().putMemberPermissionOverride(member.getIdLong(), Collections.singleton(Permission.VOICE_CONNECT), null).queue();
+                    }
+                    event.getInteraction().getHook().sendMessage("Connect permission has been granted to those users!").queue();
+                } else {
+                    event.getInteraction().getHook().sendMessage("This is a public lobby, you can't invite people!").queue();
+                }
+            } else {
+                event.getInteraction().getHook().sendMessage("This isn't your lobby!").queue();
+            }
+        } else {
+            event.getInteraction().getHook().sendMessage("You are not in a voice-channel, please join your own lobby voice-channel and try again!").queue();
+        }
+    }
+
+    @JDASlashCommand(name = "lobby", subcommand = "kick", description = "Kick people from your lobby!")
+    public void onLobbyKick(
+            GuildSlashEvent event,
+            @SlashOption(description = "Who would you like to kick?", name = "kick") List<Member> inviteMembers
+    ) {
+        event.deferReply(true).queue();
+
+        if (event.getMember().getVoiceState() != null && event.getMember().getVoiceState().inAudioChannel() && event.getMember().getVoiceState().getChannel() != null) {
+            var channel = event.getMember().getVoiceState().getChannel();
+            var ownerId = Main.getTempVoiceChannelAndOwnerIds().get(channel.getIdLong());
+            if (event.getMember().getIdLong() == ownerId) {
+                var isPrivate = channel.getRolePermissionOverrides().stream().anyMatch(x -> x.isRoleOverride() && x.getRole().isPublicRole() && x.getDenied().contains(Permission.VOICE_CONNECT));
+
+                if (isPrivate) {
+                    for (Member member : inviteMembers) {
+                        channel.getManager().removePermissionOverride(member).queue();
+                    }
+                    event.getInteraction().getHook().sendMessage("Connect permission has been denied to those users!").queue();
+                } else {
+                    event.getInteraction().getHook().sendMessage("This is a public lobby, you can't kick people!").queue();
+                }
+            } else {
+                event.getInteraction().getHook().sendMessage("This isn't your lobby!").queue();
+            }
+        } else {
+            event.getInteraction().getHook().sendMessage("You are not in a voice-channel, please join your own lobby voice-channel and try again!").queue();
+        }
     }
 
     @NotNull
