@@ -34,5 +34,14 @@ public class ReadyListener extends ListenerAdapter {
                 Main.setTags(channel);
             }
         }
+
+        var category = event.getJDA().getCategoryById(Main.getTemporalVoiceCategory());
+        if (category != null) {
+            for (var channel : category.getVoiceChannels()) {
+                if (channel.getMembers().isEmpty()) {
+                    channel.delete().queue();
+                }
+            }
+        }
     }
 }
