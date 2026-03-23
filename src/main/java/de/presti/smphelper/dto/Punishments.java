@@ -16,6 +16,7 @@ import lombok.*;
 public class Punishments {
 
     @Id
+    @Column(nullable = false)
     long userId;
 
     @Column(nullable = false)

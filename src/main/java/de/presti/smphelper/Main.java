@@ -1,25 +1,19 @@
 package de.presti.smphelper;
 
+import de.presti.smphelper.dto.BlacklistedWord;
+import de.presti.smphelper.dto.CrashReport;
 import de.presti.smphelper.dto.Punishments;
+import de.presti.smphelper.service.BotService;
 import de.presti.smphelper.utils.Config;
 import de.presti.smphelper.utils.ResourceUtil;
 import io.github.freya022.botcommands.api.core.BotCommands;
-import de.presti.smphelper.dto.CrashReport;
-import jakarta.persistence.Table;
+import io.github.freya022.botcommands.api.core.JDAService;
+import io.github.freya022.botcommands.api.core.service.ServiceSupplier;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
-import net.dv8tion.jda.api.components.buttons.Button;
-import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.components.container.Container;
-import net.dv8tion.jda.api.components.section.Section;
-import net.dv8tion.jda.api.components.separator.Separator;
-import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
-import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.utils.FileUpload;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -28,11 +22,9 @@ import org.hibernate.query.Query;
 import org.hibernate.service.ServiceRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.reflections.Reflections;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 
-import java.io.InputStream;
+import javax.net.ssl.*;
+import java.security.cert.X509Certificate;
 import java.util.*;
 
 @Slf4j
@@ -46,29 +38,20 @@ public class Main {
     private static long initialChannel = 1116305428050104340L;
 
     @Getter
-    private static long forumChannelId = 1409833736756793425L,
-            testerForumChannelId = 1475510715120095325L,
-            testerReportChannelId = 1325356201076330496L,
-            respondToMessageCategory = 1321252725291483137L,
-            temporalVoiceCategory = 1324598005944422400L;
-
-    @Getter
-    private static long currentIndex = 0;
-
-    @Getter
-    private final static List<CrashReport> crashReports = new ArrayList<>();
-
-    @Getter
-    private final static List<Punishments> punishments = new ArrayList<>();
-
+    private static long forumChannelId = 1409833736756793425L, testerForumChannelId = 1475510715120095325L, testerReportChannelId = 1325356201076330496L, respondToMessageCategory = 1321252725291483137L, temporalVoiceCategory = 1324598005944422400L;
     @Getter
     private static HashMap<Long, Long> tempVoiceChannelAndOwnerIds = new HashMap<>();
 
-    @Getter
-    private final static List<String> releaseTrigger = new ArrayList<>();
-
     public static void main(String[] args) {
-        Config.getInstance();
+        if (Config.getInstance() == null) {
+            Config.createConfig();
+        }
+
+        try {
+            disableSSL();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         guildId = Config.getInstance().getGuildId();
         forumChannelId = Config.getInstance().getForumChannelId();
@@ -76,31 +59,21 @@ public class Main {
         initialChannel = Config.getInstance().getChannelId();
         testerReportChannelId = Config.getInstance().getTesterReportChannelId();
         respondToMessageCategory = Config.getInstance().getRespondToMessageCategory();
-        currentIndex = Config.getInstance().getCurrentIndex();
         temporalVoiceCategory = Config.getInstance().getTemporalVoiceCategory();
-
-        if (Config.getInstance().getReportList() != null) {
-            crashReports.addAll(Config.getInstance().getReportList());
-        }
-
-        if (Config.getInstance().getPunishmentsList() != null) {
-            punishments.addAll(Config.getInstance().getPunishmentsList());
-        }
 
         if (Config.getInstance().getTempVoiceChannelAndOwnerIds() != null) {
             tempVoiceChannelAndOwnerIds = new HashMap<>(Config.getInstance().getTempVoiceChannelAndOwnerIds());
         }
 
-        if (Config.getInstance().getReleaseTrigger() != null) {
-            releaseTrigger.addAll(Config.getInstance().getReleaseTrigger());
-        }
-
         log.info("Loaded config!");
 
         BotCommands.create(builder -> {
+            builder.addClass(BotService.class);
+            builder.services(config -> config.registerServiceSupplier(ServiceSupplier.builder(JDAService.class)
+                    .build(bContext -> new BotService(Config.getInstance()))));
             builder.addPredefinedOwners(Config.getInstance().getDevUserId());
-            builder.addSearchPath("de.presti.smphelper.utils");
             builder.addSearchPath("de.presti.smphelper.service");
+            builder.addSearchPath("de.presti.smphelper.utils");
             builder.addSearchPath("de.presti.smphelper.commands");
 
             builder.textCommands(textCommands -> textCommands.usePingAsPrefix(true));
@@ -117,19 +90,11 @@ public class Main {
     public static SessionFactory buildSessionFactory() {
 
         try {
-            Configuration configuration = new Configuration().addProperties(ResourceUtil.getResourceAsProperties("hibernate.properties"));
+            Configuration configuration = new Configuration().addProperties(ResourceUtil.getResourceAsProperties("/hibernate.properties"));
 
-            Set<Class<?>> classSet = new Reflections(
-                    ConfigurationBuilder
-                            .build()
-                            .forPackage("de.presti.smphelper.dto", ClasspathHelper.staticClassLoader()))
-                    .getTypesAnnotatedWith(Table.class);
-
-            if (classSet.isEmpty()) {
-                log.error("No Entities found!");
-            }
-
-            classSet.forEach(configuration::addAnnotatedClass);
+            configuration.addAnnotatedClass(BlacklistedWord.class);
+            configuration.addAnnotatedClass(CrashReport.class);
+            configuration.addAnnotatedClass(Punishments.class);
 
             ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
 
@@ -145,8 +110,7 @@ public class Main {
     public static <R> Optional<R> getEntity(@NotNull R r, @NotNull String sqlQuery, @Nullable Map<String, Object> parameters) {
         sqlQuery = sqlQuery.isEmpty() ? "FROM " + r.getClass().getSimpleName() : sqlQuery;
 
-        try (SessionFactory sessionFactory = buildSessionFactory();
-                Session session = sessionFactory.openSession()) {
+        try (SessionFactory sessionFactory = buildSessionFactory(); Session session = sessionFactory.openSession()) {
 
             session.beginTransaction();
 
@@ -173,8 +137,7 @@ public class Main {
             return null;
         }
 
-        try (SessionFactory sessionFactory = buildSessionFactory();
-             Session session = sessionFactory.openSession()) {
+        try (SessionFactory sessionFactory = buildSessionFactory(); Session session = sessionFactory.openSession()) {
 
             session.beginTransaction();
 
@@ -194,8 +157,7 @@ public class Main {
             return;
         }
 
-        try (SessionFactory sessionFactory = buildSessionFactory();
-             Session session = sessionFactory.openSession()) {
+        try (SessionFactory sessionFactory = buildSessionFactory(); Session session = sessionFactory.openSession()) {
 
             session.beginTransaction();
 
@@ -232,6 +194,33 @@ public class Main {
             toAdd.add(new ForumTagData(tagName).setEmoji(Emoji.fromUnicode("💥")).setModerated(true));
         }
         channel.getManager().setAvailableTags(toAdd).complete();
+    }
+
+    public static void disableSSL() throws Exception {
+        HttpsURLConnection.setDefaultSSLSocketFactory(trustAllSSLSocketFactory());
+
+        // Disable hostname verification
+        HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+    }
+
+    public static X509TrustManager trustAllCert() {
+        return new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+            }
+
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+            }
+        };
+    }
+
+    public static SSLSocketFactory trustAllSSLSocketFactory() throws Exception {
+        SSLContext sc = SSLContext.getInstance("TLS");
+        sc.init(null, new X509TrustManager[]{trustAllCert()}, new java.security.SecureRandom());
+        return sc.getSocketFactory();
     }
 
 }

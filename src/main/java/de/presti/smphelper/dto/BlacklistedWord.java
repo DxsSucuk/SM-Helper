@@ -1,5 +1,6 @@
 package de.presti.smphelper.dto;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -14,5 +15,6 @@ import lombok.*;
 @AllArgsConstructor
 public class BlacklistedWord {
     @Id
+    @Column(nullable = false)
     String content;
 }

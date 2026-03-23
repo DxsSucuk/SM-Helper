@@ -34,16 +34,11 @@ public class Config {
     boolean sendInitialMessage;
     boolean setInitialForumTag;
     long minViolationsUntilTimeout;
-    long currentIndex;
     long devUserId;
     long temporalVoiceCategory;
     long lobbyShareChannel;
 
-    List<CrashReport> reportList;
-    List<Punishments> punishmentsList;
     HashMap<Long, Long> tempVoiceChannelAndOwnerIds;
-    List<String> releaseTrigger;
-
 
     @BService
     public static Config getInstance() {
@@ -60,6 +55,11 @@ public class Config {
         } catch (IOException e) {
             log.error("Failed to write config file!");
         }
+    }
+
+    public static void createConfig() {
+        INSTANCE = new Config();
+        INSTANCE.saveConfig();
     }
 
     private static Config readConfig() {

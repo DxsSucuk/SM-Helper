@@ -1,5 +1,7 @@
 package de.presti.smphelper.service;
 
+import com.neovisionaries.ws.client.WebSocketFactory;
+import de.presti.smphelper.Main;
 import de.presti.smphelper.listener.ComponentListener;
 import de.presti.smphelper.listener.MessageListener;
 import de.presti.smphelper.listener.ReadyListener;
@@ -11,17 +13,19 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.hooks.IEventManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.util.Set;
 
 import static net.dv8tion.jda.api.utils.cache.CacheFlag.FORUM_TAGS;
 
 @BService
-public class Bot extends JDAService {
+public class BotService extends JDAService {
     private final Config config;
 
-    public Bot(Config config) {
+    public BotService(Config config) {
         this.config = config;
     }
 
@@ -39,12 +43,22 @@ public class Bot extends JDAService {
 
     @Override
     public void createJDA(@NotNull BReadyEvent event, @NotNull IEventManager eventManager) {
+        SSLSocketFactory sslSocketFactory;
+        try {
+            sslSocketFactory = Main.trustAllSSLSocketFactory();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+
         createLight(config.getBotToken())
                 .setActivity(Activity.playing("Marvel's Spider-Man Multiplayer"))
                 .setEnabledIntents(getIntents())
                 .enableCache(getCacheFlags())
                 .setEventManager(eventManager)
                 .addEventListeners(new ComponentListener(), new MessageListener(), new ReadyListener())
+                .setHttpClientBuilder(new OkHttpClient.Builder().sslSocketFactory(sslSocketFactory, Main.trustAllCert()))
+                .setWebsocketFactory(new WebSocketFactory().setVerifyHostname(false).setSSLSocketFactory(sslSocketFactory))
                 .build();
     }
 }
