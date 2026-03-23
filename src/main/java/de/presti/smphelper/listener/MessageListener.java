@@ -1,6 +1,10 @@
 package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
+import de.presti.smphelper.dto.BlacklistedWord;
+import de.presti.smphelper.dto.CrashReport;
+import de.presti.smphelper.dto.Punishments;
+import de.presti.smphelper.utils.ComponentUtil;
 import de.presti.smphelper.utils.Config;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
@@ -15,11 +19,14 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 public class MessageListener extends ListenerAdapter {
@@ -46,13 +53,12 @@ public class MessageListener extends ListenerAdapter {
                     .replace("5", "s").replace("7", "l")
                     .toLowerCase().trim();
 
-            boolean hasTriggeredFreeRelease = Main.getReleaseTrigger().contains(cleanedUpMessage);
-
+            boolean hasTriggeredFreeRelease = Main.getEntity(new BlacklistedWord(), "FROM BlacklistedWord WHERE content = :content", Map.of("content", cleanedUpMessage)).isPresent();
             boolean hasWebHeadRole = event.getMember() != null && event.getMember().getRoles().stream().anyMatch(x -> x.getIdLong() == 1321252725291483137L);
             //boolean hasHigherRoleThanWebHead = event.getMember() != null && event.getGuild().getRoleById(1321252725291483137L).getPosition() < event.getMember().getRoles().getFirst().getPosition();
 
             if (hasTriggeredFreeRelease) {
-                var punishment = Main.getPunishmentOfUserOrDefault(event.getAuthor().getIdLong(), 0);
+                var punishment = Main.getEntity(new Punishments(), "FROM Punishments WHERE userId = :id", Map.of("id", event.getAuthor().getIdLong())).orElse(new Punishments(event.getAuthor().getIdLong(), 0));
                 punishment.addViolation(1);
 
                 if (punishment.getPunishmentCount() > Config.getInstance().getMinViolationsUntilTimeout()) {
@@ -65,18 +71,18 @@ public class MessageListener extends ListenerAdapter {
                     }
                 }
 
-                Main.addPunishment(punishment);
+                Main.updateEntity(punishment);
 
                 log.info("User -> {} triggered release.", event.getMember().getEffectiveName());
                 try {
-                    event.getMessage().replyComponents(Main.createReleaseContainer()).useComponentsV2().queue();
+                    event.getMessage().replyComponents(ComponentUtil.createReleaseContainer()).useComponentsV2().queue();
                 } catch (Exception exception) {
                     log.warn("Failed to reply with message because!", exception);
                 }
                 timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
             } else if ((Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("help")) &&
                     Arrays.stream(words).anyMatch(x -> x.equalsIgnoreCase("mod"))) && !hasWebHeadRole/* && !hasHigherRoleThanWebHead*/) {
-                event.getMessage().replyComponents(Main.createNeedSupportContainer()).useComponentsV2().queue();
+                event.getMessage().replyComponents(ComponentUtil.createNeedSupportContainer()).useComponentsV2().queue();
                 timedOutUsers.put(event.getAuthor().getIdLong(), System.currentTimeMillis());
             }
         }
@@ -85,15 +91,11 @@ public class MessageListener extends ListenerAdapter {
     @Override
     public void onMessageContextInteraction(MessageContextInteractionEvent event) {
         if (event.getName().equalsIgnoreCase("Upload file to report")) {
-            if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD) {
-                if (!event.getUser().isBot() && Main.isCrashReport(event.getChannelIdLong())) {
+            if (event.getChannelType() == ChannelType.GUILD_PUBLIC_THREAD && event.getChannel() != null) {
+                var crashReportOptional = Main.getEntity(new CrashReport(), "FROM CrashReport WHERE channelId = :id", Map.of("channelId", event.getChannel().getIdLong()));
+                if (!event.getUser().isBot() && crashReportOptional.isPresent()) {
 
-                    var crashReport = Main.getCrashReportFromChanneldId(event.getChannelIdLong());
-
-                    if (crashReport == null) {
-                        log.error("This should not happen??????????????????");
-                        return;
-                    }
+                    var crashReport = crashReportOptional.get();
 
                     if (event.getUser().getIdLong() == crashReport.getOwnerId()) {
                         if (event.getTarget().getAttachments().isEmpty()) {

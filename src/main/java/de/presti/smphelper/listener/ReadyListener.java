@@ -1,6 +1,7 @@
 package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
+import de.presti.smphelper.utils.ComponentUtil;
 import de.presti.smphelper.utils.Config;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -13,12 +14,12 @@ public class ReadyListener extends ListenerAdapter {
         if (Config.getInstance().isSendInitialMessage()) {
             var channel = event.getJDA().getTextChannelById(Config.getInstance().getChannelId());
             if (channel != null) {
-                channel.sendMessageComponents(Main.createInitialMessageForReport()).useComponentsV2().queue();
+                channel.sendMessageComponents(ComponentUtil.createInitialMessageForReport()).useComponentsV2().queue();
             }
 
             channel = event.getJDA().getTextChannelById(Config.getInstance().getTesterReportChannelId());
             if (channel != null) {
-                channel.sendMessageComponents(Main.createInitialMessageForReport()).useComponentsV2().queue();
+                channel.sendMessageComponents(ComponentUtil.createInitialMessageForReport()).useComponentsV2().queue();
             }
         }
 

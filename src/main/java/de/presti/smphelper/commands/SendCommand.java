@@ -1,6 +1,7 @@
 package de.presti.smphelper.commands;
 
 import de.presti.smphelper.Main;
+import de.presti.smphelper.utils.ComponentUtil;
 import de.presti.smphelper.utils.Config;
 import io.github.freya022.botcommands.api.commands.CommandPath;
 import io.github.freya022.botcommands.api.commands.annotations.Command;
@@ -42,8 +43,8 @@ public class SendCommand implements SlashOptionChoiceProvider {
 
         event.deferReply(true).queue();
         switch (action) {
-            case 1 -> channel.sendMessageComponents(Main.createInitialMessageForReport()).useComponentsV2().queue();
-            case 2 -> channel.sendMessageComponents(Main.createCommonIssues()).useComponentsV2().queue();
+            case 1 -> channel.sendMessageComponents(ComponentUtil.createInitialMessageForReport()).useComponentsV2().queue();
+            case 2 -> channel.sendMessageComponents(ComponentUtil.createCommonIssues()).useComponentsV2().queue();
         }
         event.getInteraction().getHook().sendMessage("Work done!").queue();
     }

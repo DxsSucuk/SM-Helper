@@ -2,6 +2,7 @@ package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
 import de.presti.smphelper.dto.CrashReport;
+import de.presti.smphelper.utils.ResourceUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.attachmentupload.AttachmentUpload;
@@ -151,7 +152,7 @@ public class ComponentListener extends ListenerAdapter {
 
                     try (var inputStream = logFile.getProxy().download().join()) {
                         byte[] content = inputStream.readAllBytes();
-                        offset = Main.getOffsetFromLog(new String(content));
+                        offset = ResourceUtil.getOffsetFromLog(new String(content));
                         logDisplay = FileDisplay.fromFile(FileUpload.fromData(content, logFile.getFileName())).withUniqueId(1001);
                     }
                     replacedLog = true;
@@ -193,7 +194,7 @@ public class ComponentListener extends ListenerAdapter {
 
             List<ContainerChildComponent> childComponents = new ArrayList<>(List.of(
                     Section.of(
-                            Thumbnail.fromFile(Main.getResourceAsFileUpload("/minispidey.png")),
+                            Thumbnail.fromFile(ResourceUtil.getResourceAsFileUpload("/minispidey.png")),
                             TextDisplay.of("## Lobby Size"),
                             TextDisplay.of(String.valueOf(lobbyCount))
                     ),
@@ -201,7 +202,7 @@ public class ComponentListener extends ListenerAdapter {
                     Separator.createDivider(Separator.Spacing.SMALL),
 
                     Section.of(
-                            Thumbnail.fromFile(Main.getResourceAsFileUpload("/minispideysad.png")),
+                            Thumbnail.fromFile(ResourceUtil.getResourceAsFileUpload("/minispideysad.png")),
                             TextDisplay.of("## What happened?"),
                             TextDisplay.of(description)
                     ),
@@ -227,8 +228,6 @@ public class ComponentListener extends ListenerAdapter {
                 return;
             }
 
-            Main.setCurrentIndex(Main.getCurrentIndex() + 1);
-
             String finalOffset = offset;
             forumChannel.createForumPost(description.substring(0, Math.min(description.length() - 1, 100)),
                     new MessageCreateBuilder().addComponents(container).useComponentsV2().build()).queue(x -> {
@@ -248,7 +247,7 @@ public class ComponentListener extends ListenerAdapter {
                 x.getThreadChannel().pinMessageById(x.getThreadChannel().getLatestMessageId()).queue();
                 x.getThreadChannel().addThreadMember(event.getMember()).queue();
                 x.getThreadChannel().getManager().setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_1_WEEK).queue();
-                Main.addCrashReport(new CrashReport(x.getThreadChannel().getIdLong(), event.getUser().getIdLong()));
+                Main.updateEntity(new CrashReport(x.getThreadChannel().getIdLong(), event.getUser().getIdLong()));
                 event.getInteraction().getHook().sendMessage("Crash reported, thank you very much for the help! -> " + x.getThreadChannel().getAsMention()).queue();
             });
 

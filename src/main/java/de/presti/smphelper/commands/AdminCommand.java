@@ -1,6 +1,7 @@
 package de.presti.smphelper.commands;
 
 import de.presti.smphelper.Main;
+import de.presti.smphelper.dto.BlacklistedWord;
 import io.github.freya022.botcommands.api.commands.annotations.Command;
 import io.github.freya022.botcommands.api.commands.annotations.Cooldown;
 import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashEvent;
@@ -26,7 +27,7 @@ public class AdminCommand {
             event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
         }
 
-        Main.addReleaseTrigger(triggerText);
+        Main.updateEntity(new BlacklistedWord(triggerText));
         event.getInteraction().getHook().sendMessage("Work done!").queue();
     }
 
@@ -41,7 +42,7 @@ public class AdminCommand {
             event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
         }
 
-        Main.removeReleaseTrigger(triggerText);
+        Main.deleteEntity(new BlacklistedWord(triggerText));
         event.getInteraction().getHook().sendMessage("Work done!").queue();
     }
 }

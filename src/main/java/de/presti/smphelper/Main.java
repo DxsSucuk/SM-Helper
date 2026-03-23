@@ -2,8 +2,10 @@ package de.presti.smphelper;
 
 import de.presti.smphelper.dto.Punishments;
 import de.presti.smphelper.utils.Config;
+import de.presti.smphelper.utils.ResourceUtil;
 import io.github.freya022.botcommands.api.core.BotCommands;
 import de.presti.smphelper.dto.CrashReport;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
@@ -18,6 +20,17 @@ import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.utils.FileUpload;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.query.Query;
+import org.hibernate.service.ServiceRegistry;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.reflections.Reflections;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 
 import java.io.InputStream;
 import java.util.*;
@@ -96,6 +109,105 @@ public class Main {
         log.info("JDA started!");
     }
 
+    /**
+     * Build a new SessionFactory.
+     *
+     * @return The SessionFactory.
+     */
+    public static SessionFactory buildSessionFactory() {
+
+        try {
+            Configuration configuration = new Configuration().addProperties(ResourceUtil.getResourceAsProperties("hibernate.properties"));
+
+            Set<Class<?>> classSet = new Reflections(
+                    ConfigurationBuilder
+                            .build()
+                            .forPackage("de.presti.smphelper.dto", ClasspathHelper.staticClassLoader()))
+                    .getTypesAnnotatedWith(Table.class);
+
+            if (classSet.isEmpty()) {
+                log.error("No Entities found!");
+            }
+
+            classSet.forEach(configuration::addAnnotatedClass);
+
+            ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+
+            return configuration.buildSessionFactory(serviceRegistry);
+        } catch (Throwable ex) {
+            // Make sure you log the exception, as it might be swallowed
+            log.error("Initial SessionFactory creation failed.", ex);
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <R> Optional<R> getEntity(@NotNull R r, @NotNull String sqlQuery, @Nullable Map<String, Object> parameters) {
+        sqlQuery = sqlQuery.isEmpty() ? "FROM " + r.getClass().getSimpleName() : sqlQuery;
+
+        try (SessionFactory sessionFactory = buildSessionFactory();
+                Session session = sessionFactory.openSession()) {
+
+            session.beginTransaction();
+
+            Query<R> query = (Query<R>) session.createQuery(sqlQuery, r.getClass());
+
+            if (parameters != null) {
+                for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                    query.setParameter(entry.getKey(), entry.getValue());
+                }
+            }
+
+            session.getTransaction().commit();
+
+            return Optional.ofNullable(query.setMaxResults(1).getSingleResultOrNull());
+        } catch (Exception exception) {
+            log.error("Failed to get Entity", exception);
+            throw exception;
+        }
+    }
+
+    public static <R> R updateEntity(R r) {
+        if (r.getClass().isAssignableFrom(Optional.class)) {
+            log.error("Calling the UpdateEntity Method with a Optional is not supported.");
+            return null;
+        }
+
+        try (SessionFactory sessionFactory = buildSessionFactory();
+             Session session = sessionFactory.openSession()) {
+
+            session.beginTransaction();
+
+            R newEntity = session.merge(r);
+
+            session.getTransaction().commit();
+
+            return newEntity;
+        }
+    }
+
+    public static <R> void deleteEntity(R r) {
+        if (r == null) return;
+
+        if (r.getClass().isAssignableFrom(Optional.class)) {
+            log.error("Calling the UpdateEntity Method with a Optional is not supported.");
+            return;
+        }
+
+        try (SessionFactory sessionFactory = buildSessionFactory();
+             Session session = sessionFactory.openSession()) {
+
+            session.beginTransaction();
+
+            session.remove(r);
+
+            session.getTransaction().commit();
+        } catch (Exception exception) {
+            log.error("Failed to delete Entity", exception);
+            throw exception;
+        }
+    }
+
     public static void setTags(ForumChannel channel) {
         List<ForumTagData> toAdd = new ArrayList<>(channel.getAvailableTags().stream().map(ForumTagData::from).toList());
 
@@ -122,186 +234,4 @@ public class Main {
         channel.getManager().setAvailableTags(toAdd).complete();
     }
 
-    public static String getOffsetFromLog(String log) {
-        List<String> allFrameOffsets = Arrays.stream(log.split("\n"))
-                .filter(x -> x.contains("Frame") && x.contains("Spider-Man.exe+")).toList();
-
-        return allFrameOffsets.getFirst().split("Spider-Man.exe+")[1].trim();
-    }
-
-    public static Container createInitialMessageForReport() {
-        return Container.of(
-                Section.of(
-                        Thumbnail.fromFile(getResourceAsFileUpload("/minispideysad.png")),
-                        TextDisplay.of("## How to report a crash"),
-                        TextDisplay.of("Simple guide to help your report crashes efficiently!")
-                ),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## What do I need before reporting?"),
-                TextDisplay.of("You will need to find your crash log and DMP file!"),
-                TextDisplay.of("Both of these files should be in your SMT/Logs folder!"),
-
-                Separator.createDivider(Separator.Spacing.LARGE),
-
-                TextDisplay.of("## What now?"),
-                TextDisplay.of("Just press the \"Report bug!\" button and follow the instructions!"),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-                ActionRow.of(Button.of(ButtonStyle.DANGER, "open_report_modal", "Report bug!"))
-        );
-    }
-
-    private static Container commonIssueContainer, releaseContainer, needSupportContainer;
-
-    public static Container createCommonIssues() {
-        return Objects.requireNonNullElseGet(commonIssueContainer, () -> commonIssueContainer = Container.of(
-                Section.of(
-                        Thumbnail.fromFile(getResourceAsFileUpload("/minispidey.png")),
-                        TextDisplay.of("## Common Issues with the Mod!"),
-                        TextDisplay.of("Below you will find common Issues with the mod ways to solve them!")
-                ),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## Stuck in the loading screen?"),
-                TextDisplay.of("The host needs to \"restart from checkpoint\"!"),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## Camera UI stuck on my screen :c"),
-                TextDisplay.of("Death shall fix your Issue!"),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## Throws are not synced!"),
-                TextDisplay.of("This can lead to softlocks in certain content, abandon the mission if it occurs."),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## Player dialog does not play!"),
-                TextDisplay.of("Spider-Man’s throwing animation is not synced between players (Throwing Weaponry, yanking scaffoldings, and throwing weapons is synced)."),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## Animations are locked?"),
-                TextDisplay.of("Other Spider-Men animations may get locked after the completion of a fisk or prisoner base. (Restart checkpoint to fix this issue)."),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## My Issue is not listed !!!!!"),
-                TextDisplay.of("When in doubt, restart checkpoint!"),
-
-                Separator.createDivider(Separator.Spacing.SMALL),
-
-                TextDisplay.of("## Latest build where?"),
-                ActionRow.of(Button.of(ButtonStyle.LINK, "https://www.patreon.com/c/hbgda", "Patreon"))
-        ));
-    }
-
-    public static Container createReleaseContainer() {
-        return Objects.requireNonNullElseGet(releaseContainer, () -> releaseContainer = Container.of(
-                Section.of(
-                        Thumbnail.fromFile(getResourceAsFileUpload("/minispideysad.png")),
-                        TextDisplay.of("## When release??????????"),
-                        TextDisplay.of("Open Beta will release once the roadmap goals have been reached!"),
-                        TextDisplay.of("Check <#1355809528750543000> for more info, and refrain from asking this everyday <3")
-                )
-        ));
-    }
-
-    public static Container createNeedSupportContainer() {
-        return Objects.requireNonNullElseGet(needSupportContainer, () -> needSupportContainer = Container.of(
-                Section.of(
-                        Thumbnail.fromFile(getResourceAsFileUpload("/minispideysad.png")),
-                        TextDisplay.of("## Need help with the mod?"),
-                        TextDisplay.of("Please connect your Patreon with Discord and check out <#1410107482998571048> for help!")
-                )
-        ));
-    }
-
-    public static void setCurrentIndex(long index) {
-        currentIndex = index;
-        Config.getInstance().setCurrentIndex(currentIndex);
-        Config.getInstance().saveConfig();
-    }
-
-    public static Punishments getPunishmentOfUser(long userId) {
-        return getPunishments().stream().filter(x -> x.getUserId() == userId).findFirst().orElse(null);
-    }
-
-    public static Punishments getPunishmentOfUserOrDefault(long userId, long defaultViolation) {
-        return getPunishments().stream().filter(x -> x.getUserId() == userId).findFirst().orElse(new Punishments(userId, defaultViolation));
-
-    }
-
-    public static void addPunishment(Punishments punishments) {
-        var existingPunishment = getPunishmentOfUser(punishments.getUserId());
-        if (existingPunishment != null) {
-            var index = getPunishments().indexOf(existingPunishment);
-            getPunishments().set(index, punishments);
-        } else {
-            getPunishments().add(punishments);
-        }
-
-        savePunishments();
-    }
-
-    public static void savePunishments() {
-        Config.getInstance().setPunishmentsList(getPunishments());
-        Config.getInstance().saveConfig();
-    }
-
-    public static void addCrashReport(CrashReport crashReport) {
-        if (getCrashReports().stream().noneMatch(x -> x.getChannelId() == crashReport.getChannelId())) {
-            crashReports.add(crashReport);
-            saveCrashReports();
-        }
-    }
-
-    public static void saveCrashReports() {
-        Config.getInstance().setReportList(getCrashReports());
-        Config.getInstance().saveConfig();
-    }
-
-    public static boolean isCrashReport(long channelId) {
-        return getCrashReports().stream().anyMatch(x -> x.getChannelId() == channelId);
-    }
-
-    public static CrashReport getCrashReportFromChanneldId(long channelId) {
-        var report = getCrashReports().stream().filter(x -> x.getChannelId() == channelId).findFirst();
-        return report.orElse(null);
-
-    }
-
-    public static void addReleaseTrigger(String trigger) {
-        if (!releaseTrigger.contains(trigger.toLowerCase())) {
-            releaseTrigger.add(trigger.toLowerCase());
-        }
-
-        saveReleaseTrigger();
-    }
-
-    public static void removeReleaseTrigger(String trigger) {
-        releaseTrigger.remove(trigger.toLowerCase());
-
-        saveReleaseTrigger();
-    }
-
-    public static void saveReleaseTrigger() {
-        Config.getInstance().setReleaseTrigger(getReleaseTrigger());
-        Config.getInstance().saveConfig();
-    }
-
-    public static FileUpload getResourceAsFileUpload(String path) {
-        final int lastSeparatorIndex = path.lastIndexOf('/');
-        final String fileName = path.substring(lastSeparatorIndex + 1);
-
-        final InputStream stream = Main.class.getResourceAsStream(path);
-        if (stream == null)
-            throw new IllegalArgumentException("Could not find resource at: " + path);
-
-        return FileUpload.fromData(stream, fileName);
-    }
 }
