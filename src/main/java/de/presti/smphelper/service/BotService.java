@@ -5,6 +5,7 @@ import de.presti.smphelper.Main;
 import de.presti.smphelper.listener.ComponentListener;
 import de.presti.smphelper.listener.MessageListener;
 import de.presti.smphelper.listener.ReadyListener;
+import de.presti.smphelper.listener.VoiceListener;
 import de.presti.smphelper.utils.Config;
 import io.github.freya022.botcommands.api.core.JDAService;
 import io.github.freya022.botcommands.api.core.events.BReadyEvent;
@@ -21,6 +22,7 @@ import javax.net.ssl.SSLSocketFactory;
 import java.util.Set;
 
 import static net.dv8tion.jda.api.utils.cache.CacheFlag.FORUM_TAGS;
+import static net.dv8tion.jda.api.utils.cache.CacheFlag.VOICE_STATE;
 
 @Slf4j
 @BService
@@ -34,13 +36,13 @@ public class BotService extends JDAService {
     @NotNull
     @Override
     public Set<CacheFlag> getCacheFlags() {
-        return Set.of(FORUM_TAGS);
+        return Set.of(FORUM_TAGS, VOICE_STATE);
     }
 
     @NotNull
     @Override
     public Set<GatewayIntent> getIntents() {
-        return defaultIntents(GatewayIntent.MESSAGE_CONTENT);
+        return defaultIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_VOICE_STATES);
     }
 
     @Override
@@ -50,7 +52,7 @@ public class BotService extends JDAService {
                 .setEnabledIntents(getIntents())
                 .enableCache(getCacheFlags())
                 .setEventManager(eventManager)
-                .addEventListeners(new ComponentListener(), new MessageListener(), new ReadyListener());
+                .addEventListeners(new ComponentListener(), new MessageListener(), new ReadyListener(), new VoiceListener());
 
         if (config.isTrustAllSsl()) {
             SSLSocketFactory sslSocketFactory;
