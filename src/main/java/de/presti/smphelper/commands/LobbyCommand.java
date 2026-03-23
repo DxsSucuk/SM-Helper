@@ -145,6 +145,28 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
         }
     }
 
+    @JDASlashCommand(name = "lobby", subcommand = "delete", description = "Delete your lobby!")
+    public void onLobbyDelete(
+            GuildSlashEvent event
+    ) {
+        event.deferReply(true).queue();
+
+        var channelIdOptional = Main.getTempVoiceChannelAndOwnerIds().entrySet().stream().filter(x -> x.getValue() == event.getMember().getIdLong()).findFirst();
+        if (channelIdOptional.isPresent()) {
+            var channel = event.getJDA().getVoiceChannelById(channelIdOptional.get().getKey());
+            if (channel != null) {
+                channel.delete().queue();
+                event.getInteraction().getHook().sendMessage("Your lobby has been deleted.").queue();
+                Main.getTempVoiceChannelAndOwnerIds().remove(channel.getIdLong());
+            } else {
+                event.getInteraction().getHook().sendMessage("Your lobby doesn't exist anymore???").queue();
+                Main.getTempVoiceChannelAndOwnerIds().remove(channelIdOptional.get().getKey());
+            }
+        } else {
+            event.getInteraction().getHook().sendMessage("You don't have a lobby!").queue();
+        }
+    }
+
     @NotNull
     @Override
     public List<Choice> getOptionChoices(@Nullable Guild guild, @NotNull CommandPath commandPath, @NotNull String option) {

@@ -45,4 +45,27 @@ public class AdminCommand {
         Main.deleteEntity(new BlacklistedWord(triggerText));
         event.getInteraction().getHook().sendMessage("Work done!").queue();
     }
+
+    @JDASlashCommand(name = "admin", group = "lobby", subcommand = "purge", description = "Purge all lobbies!")
+    public void onAdminLobbyPurgeRequest(
+            GuildSlashEvent event
+    ) {
+        event.deferReply(true).queue();
+
+        if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
+            event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+        }
+
+        Main.getTempVoiceChannelAndOwnerIds().clear();
+        var category = event.getJDA().getCategoryById(Main.getTemporalVoiceCategory());
+        if (category != null) {
+            for (var channel : category.getVoiceChannels()) {
+                if (channel.getMembers().isEmpty()) {
+                    channel.delete().queue();
+                }
+            }
+        }
+
+        event.getInteraction().getHook().sendMessage("Cleared all lobbies!").queue();
+    }
 }
