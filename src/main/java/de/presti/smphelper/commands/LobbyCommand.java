@@ -39,8 +39,9 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
             @SlashOption(description = "Is this lobby invite-only?", name = "private") boolean privateLobby,
             @SlashOption(description = "Whats your location? (EU, ASIA, AMERICA, Northpole??, SPACE??????)", name = "location") String location,
             @SlashOption(description = "If any, what VPN software should be used to connect? (rAdmin, ZeroTier, Hamachi, TailScale)", name = "vpnsoftware") String vpnSoftware,
-            @SlashOption(description = "If vpn is used, define connection stuff needed! (ZeroTier -> NetId, rAdmin -> name:pass)", name = "login") String vpnLogin,
-            @SlashOption(description = "If mods are used, please name all of them, or a link to a pastebin with the names or zip!", name = "mods") String modList
+            @SlashOption(description = "If vpn is used, define network name! (ZeroTier -> NetId, rAdmin -> network name)", name = "name") String vpnLoginName,
+            @SlashOption(description = "If vpn is used, define network password! (ZeroTier -> None, rAdmin -> network password)", name = "password") String vpnLoginPassword,
+            @SlashOption(description = "If mods are used or not!", name = "modded") boolean usingMods
 
     ) {
         event.deferReply(true).queue();
@@ -57,12 +58,12 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
         embedBuilder.setTitle(lobbyName);
         embedBuilder.setColor(privateLobby ? Color.RED : Color.GREEN);
         embedBuilder.addField("**Location**", location, true);
-        embedBuilder.addField("**Mods**", modList, true);
+        embedBuilder.addField("**Modded**", usingMods ? "Yes" : "No", true);
         if (usesVPN) {
             embedBuilder.addBlankField(true);
             embedBuilder.addField("**VPN**", "", true);
             embedBuilder.addField("**Software**", vpnSoftware, true);
-            embedBuilder.addField("**Login**", vpnLogin, true);
+            embedBuilder.addField("**Login**", vpnLoginName + ":" + vpnLoginPassword, true);
         }
 
         event.getJDA().getCategoryById(Config.getInstance().getTemporalVoiceCategory()).createVoiceChannel(lobbyName).queue(channel -> {
