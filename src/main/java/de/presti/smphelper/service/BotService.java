@@ -9,6 +9,7 @@ import de.presti.smphelper.utils.Config;
 import io.github.freya022.botcommands.api.core.JDAService;
 import io.github.freya022.botcommands.api.core.events.BReadyEvent;
 import io.github.freya022.botcommands.api.core.service.annotations.BService;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.hooks.IEventManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -21,6 +22,7 @@ import java.util.Set;
 
 import static net.dv8tion.jda.api.utils.cache.CacheFlag.FORUM_TAGS;
 
+@Slf4j
 @BService
 public class BotService extends JDAService {
     private final Config config;
@@ -43,22 +45,27 @@ public class BotService extends JDAService {
 
     @Override
     public void createJDA(@NotNull BReadyEvent event, @NotNull IEventManager eventManager) {
-        SSLSocketFactory sslSocketFactory;
-        try {
-            sslSocketFactory = Main.trustAllSSLSocketFactory();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-
-        createLight(config.getBotToken())
+        var builder = createLight(config.getBotToken())
                 .setActivity(Activity.playing("Marvel's Spider-Man Multiplayer"))
                 .setEnabledIntents(getIntents())
                 .enableCache(getCacheFlags())
                 .setEventManager(eventManager)
-                .addEventListeners(new ComponentListener(), new MessageListener(), new ReadyListener())
-                .setHttpClientBuilder(new OkHttpClient.Builder().sslSocketFactory(sslSocketFactory, Main.trustAllCert()))
-                .setWebsocketFactory(new WebSocketFactory().setVerifyHostname(false).setSSLSocketFactory(sslSocketFactory))
-                .build();
+                .addEventListeners(new ComponentListener(), new MessageListener(), new ReadyListener());
+
+        if (config.isTrustAllSsl()) {
+            SSLSocketFactory sslSocketFactory;
+            try {
+                sslSocketFactory = Main.trustAllSSLSocketFactory();
+            } catch (Exception e) {
+                log.error("Failed to do the SSL cert skip", e);
+                throw new RuntimeException(e);
+            }
+
+            builder = builder
+                    .setHttpClientBuilder(new OkHttpClient.Builder().sslSocketFactory(sslSocketFactory, Main.trustAllCert()))
+                    .setWebsocketFactory(new WebSocketFactory().setVerifyHostname(false).setSSLSocketFactory(sslSocketFactory));
+        }
+
+        builder.build();
     }
 }

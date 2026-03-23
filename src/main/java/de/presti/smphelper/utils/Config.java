@@ -38,6 +38,8 @@ public class Config {
     long temporalVoiceCategory;
     long lobbyShareChannel;
 
+    boolean trustAllSsl;
+
     HashMap<Long, Long> tempVoiceChannelAndOwnerIds;
 
     @BService

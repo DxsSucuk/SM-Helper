@@ -1,5 +1,6 @@
 package de.presti.smphelper;
 
+import de.presti.smphelper.commands.*;
 import de.presti.smphelper.dto.BlacklistedWord;
 import de.presti.smphelper.dto.CrashReport;
 import de.presti.smphelper.dto.Punishments;
@@ -69,10 +70,20 @@ public class Main {
 
         BotCommands.create(builder -> {
             builder.addClass(BotService.class);
+
+            builder.setEnableShutdownHook(true);
+
+            builder.addClass(AdminCommand.class);
+            builder.addClass(HelpCommand.class);
+            builder.addClass(LobbyCommand.class);
+            builder.addClass(SendCommand.class);
+            builder.addClass(SetTagsCommand.class);
+
             builder.services(config -> config.registerServiceSupplier(ServiceSupplier.builder(JDAService.class)
                     .build(bContext -> new BotService(Config.getInstance()))));
+
             builder.addPredefinedOwners(Config.getInstance().getDevUserId());
-            builder.addSearchPath("de.presti.smphelper.service");
+
             builder.addSearchPath("de.presti.smphelper.utils");
             builder.addSearchPath("de.presti.smphelper.commands");
 
