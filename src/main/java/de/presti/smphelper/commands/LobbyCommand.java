@@ -46,6 +46,11 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
     ) {
         event.deferReply(true).queue();
 
+        if (Main.isLockdown()) {
+            event.getInteraction().getHook().sendMessage("Can't create a lobby while lockdown is active!").queue();
+            return;
+        }
+
         if (Main.getTempVoiceChannelAndOwnerIds().containsValue(event.getMember().getIdLong())) {
             event.getInteraction().getHook().sendMessage("You already have a lobby!").queue();
             return;

@@ -68,4 +68,23 @@ public class AdminCommand {
 
         event.getInteraction().getHook().sendMessage("Cleared all lobbies!").queue();
     }
+
+    @JDASlashCommand(name = "admin", group = "util", subcommand = "lockdown")
+    public void onAdminLockdownRequest(
+            GuildSlashEvent event
+    ) {
+        event.deferReply(true).queue();
+
+        if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
+            event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+        }
+
+        Main.setLockdown(!Main.isLockdown());
+
+        if (Main.isLockdown()) {
+            event.getInteraction().getHook().sendMessage("Bot lockdown up!").queue();
+        } else {
+            event.getInteraction().getHook().sendMessage("Bot lockdown lifted!").queue();
+        }
+    }
 }

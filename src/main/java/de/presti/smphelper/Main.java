@@ -4,13 +4,11 @@ import de.presti.smphelper.commands.*;
 import de.presti.smphelper.dto.BlacklistedWord;
 import de.presti.smphelper.dto.CrashReport;
 import de.presti.smphelper.dto.Punishments;
-import de.presti.smphelper.service.BotService;
 import de.presti.smphelper.utils.Config;
 import de.presti.smphelper.utils.ResourceUtil;
 import io.github.freya022.botcommands.api.core.BotCommands;
-import io.github.freya022.botcommands.api.core.JDAService;
-import io.github.freya022.botcommands.api.core.service.ServiceSupplier;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData;
@@ -39,7 +37,16 @@ public class Main {
     private static long initialChannel = 1116305428050104340L;
 
     @Getter
-    private static long forumChannelId = 1409833736756793425L, testerForumChannelId = 1475510715120095325L, testerReportChannelId = 1325356201076330496L, respondToMessageCategory = 1321252725291483137L, temporalVoiceCategory = 1324598005944422400L;
+    private static long forumChannelId = 1409833736756793425L,
+            testerForumChannelId = 1475510715120095325L,
+            testerReportChannelId = 1325356201076330496L,
+            respondToMessageCategory = 1321252725291483137L,
+            temporalVoiceCategory = 1324598005944422400L;
+
+    @Setter
+    @Getter
+    private static boolean lockdown = false;
+
     @Getter
     private static HashMap<Long, Long> tempVoiceChannelAndOwnerIds = new HashMap<>();
 
