@@ -6,9 +6,11 @@ import io.github.freya022.botcommands.api.commands.annotations.Command;
 import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashEvent;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.JDASlashCommand;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.SlashOption;
+import io.github.freya022.botcommands.api.commands.text.annotations.RequireOwner;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 
 @Command
+@RequireOwner
 public class SetTagsCommand {
     @JDASlashCommand(name = "set-tags", description = "Set the tags of a forum-channel.")
     public void onSetTagRequest(

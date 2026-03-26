@@ -53,7 +53,18 @@ public class MessageListener extends ListenerAdapter {
                     .replace("5", "s").replace("7", "l")
                     .toLowerCase().trim();
 
-            boolean hasTriggeredFreeRelease = Main.getEntity(new BlacklistedWord(), "FROM BlacklistedWord WHERE content = :content", Map.of("content", cleanedUpMessage)).isPresent();
+            var list = Main.getEntities(new BlacklistedWord(), "FROM BlacklistedWord", Map.of());
+
+            boolean hasTriggeredFreeRelease = false;
+            if (list.isPresent()) {
+                for (var word : list.get()) {
+                    if (cleanedUpMessage.contains(word.getContent())) {
+                        hasTriggeredFreeRelease = true;
+                        break;
+                    }
+                }
+            }
+
             boolean hasWebHeadRole = event.getMember() != null && event.getMember().getRoles().stream().anyMatch(x -> x.getIdLong() == 1321252725291483137L);
             //boolean hasHigherRoleThanWebHead = event.getMember() != null && event.getGuild().getRoleById(1321252725291483137L).getPosition() < event.getMember().getRoles().getFirst().getPosition();
 

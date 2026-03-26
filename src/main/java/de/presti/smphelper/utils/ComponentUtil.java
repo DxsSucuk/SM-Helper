@@ -85,24 +85,30 @@ public class ComponentUtil {
     }
 
     public static Container createReleaseContainer() {
-        return Objects.requireNonNullElseGet(releaseContainer, () -> releaseContainer = Container.of(
-                Section.of(
-                        Thumbnail.fromFile(ResourceUtil.getResourceAsFileUpload("/minispideysad.png")),
-                        TextDisplay.of("## When release??????????"),
-                        TextDisplay.of("Open Beta will release once the roadmap goals have been reached!"),
-                        TextDisplay.of("Check <#1355809528750543000> for more info, and refrain from asking this everyday <3")
-                )
-        ));
+        return Objects.requireNonNullElseGet(releaseContainer,
+                () -> releaseContainer = Container.of(createReleaseSection()));
+    }
+
+    public static Section createReleaseSection() {
+        return Section.of(
+                Thumbnail.fromFile(ResourceUtil.getResourceAsFileUpload("/minispideysad.png")),
+                TextDisplay.of("## When release??????????"),
+                TextDisplay.of("Open Beta will release once the roadmap goals have been reached!"),
+                TextDisplay.of("Check <#1355809528750543000> for more info, and refrain from asking this everyday <3")
+        );
     }
 
     public static Container createNeedSupportContainer() {
-        return Objects.requireNonNullElseGet(needSupportContainer, () -> needSupportContainer = Container.of(
-                Section.of(
-                        Thumbnail.fromFile(ResourceUtil.getResourceAsFileUpload("/minispideysad.png")),
-                        TextDisplay.of("## Need help with the mod?"),
-                        TextDisplay.of("Please connect your Patreon with Discord and check out <#1410107482998571048> for help!")
-                )
-        ));
+        return Objects.requireNonNullElseGet(needSupportContainer,
+                () -> needSupportContainer = Container.of(createNeedSupportSection()));
+    }
+
+    public static Section createNeedSupportSection() {
+        return Section.of(
+                Thumbnail.fromFile(ResourceUtil.getResourceAsFileUpload("/minispideysad.png")),
+                TextDisplay.of("## Need help with the mod?"),
+                TextDisplay.of("Please connect your Patreon with Discord and check out <#1410107482998571048> for help!")
+        );
     }
 
 }

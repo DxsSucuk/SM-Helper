@@ -2,14 +2,17 @@ package de.presti.smphelper.listener;
 
 import de.presti.smphelper.Main;
 import de.presti.smphelper.dto.CrashReport;
+import de.presti.smphelper.utils.ComponentUtil;
 import de.presti.smphelper.utils.ResourceUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.attachmentupload.AttachmentUpload;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.container.ContainerChildComponent;
 import net.dv8tion.jda.api.components.filedisplay.FileDisplay;
 import net.dv8tion.jda.api.components.label.Label;
+import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
 import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
@@ -22,11 +25,14 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagSnowflake;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -251,6 +257,34 @@ public class ComponentListener extends ListenerAdapter {
                 event.getInteraction().getHook().sendMessage("Crash reported, thank you very much for the help! -> " + x.getThreadChannel().getAsMention()).queue();
             });
 
+        }
+    }
+
+    @Override
+    public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
+        super.onStringSelectInteraction(event);
+
+        if (event.getGuild() == null)
+            return;
+
+        if (event.getInteraction().getComponentId().equalsIgnoreCase("help:select")) {
+            var messageEditBuilder = MessageEditBuilder.fromMessage(event.getMessage());
+
+            var option = event.getInteraction().getValues().getFirst().toLowerCase();
+
+            var sectionToUse = (switch (option) {
+                case "mod-get" -> Section.of(
+                        Button.link("https://www.patreon.com/c/hbgda", "Patreon"),
+                        TextDisplay.of("## Where can I get the mod?"),
+                        TextDisplay.of("Until public release you need to sub to the patreon to access it!"),
+                        TextDisplay.of("The button on the right will direct you to the patreon!")
+                );
+                case "mod-help" -> ComponentUtil.createNeedSupportSection();
+                default -> ComponentUtil.createReleaseSection();
+            }).withUniqueId(1);
+
+            messageEditBuilder.setComponents(messageEditBuilder.getComponentTree().replace(ComponentReplacer.byUniqueId(1, sectionToUse)));
+            event.getInteraction().editMessage(messageEditBuilder.build()).queue();
         }
     }
 }

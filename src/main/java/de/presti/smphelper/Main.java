@@ -151,6 +151,32 @@ public class Main {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public static <R> Optional<List<R>> getEntities(@NotNull R r, @NotNull String sqlQuery, @Nullable Map<String, Object> parameters) {
+        sqlQuery = sqlQuery.isEmpty() ? "FROM " + r.getClass().getSimpleName() : sqlQuery;
+
+        try (SessionFactory sessionFactory = buildSessionFactory(); Session session = sessionFactory.openSession()) {
+
+            session.beginTransaction();
+
+            Query<R> query = (Query<R>) session.createQuery(sqlQuery, r.getClass());
+
+            if (parameters != null) {
+                for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                    query.setParameter(entry.getKey(), entry.getValue());
+                }
+            }
+
+            session.getTransaction().commit();
+
+            return Optional.ofNullable(query.getResultList());
+        } catch (Exception exception) {
+            log.error("Failed to get Entity", exception);
+            throw exception;
+        }
+    }
+
+
     public static <R> R updateEntity(R r) {
         if (r.getClass().isAssignableFrom(Optional.class)) {
             log.error("Calling the UpdateEntity Method with a Optional is not supported.");

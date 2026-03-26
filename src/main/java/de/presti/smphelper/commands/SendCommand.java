@@ -9,6 +9,7 @@ import io.github.freya022.botcommands.api.commands.application.SlashOptionChoice
 import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashEvent;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.JDASlashCommand;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.SlashOption;
+import io.github.freya022.botcommands.api.commands.text.annotations.RequireOwner;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
@@ -17,6 +18,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 @Command
+@RequireOwner
 public class SendCommand implements SlashOptionChoiceProvider {
 
     @Override
