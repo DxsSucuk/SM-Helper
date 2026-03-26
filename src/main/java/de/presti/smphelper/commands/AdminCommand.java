@@ -11,6 +11,7 @@ import io.github.freya022.botcommands.api.commands.application.slash.annotations
 import net.dv8tion.jda.api.Permission;
 
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 @Command
 @Cooldown(cooldown = 5, unit = ChronoUnit.SECONDS)
@@ -28,7 +29,7 @@ public class AdminCommand {
         }
 
         Main.updateEntity(new BlacklistedWord(triggerText));
-        event.getInteraction().getHook().sendMessage("Work done!").queue();
+        event.getInteraction().getHook().sendMessage("Added -> " + triggerText + " !").queue();
     }
 
     @JDASlashCommand(name = "admin", group = "releaseclarifytrigger", subcommand = "remove", description = "Remove trigger!")
@@ -43,7 +44,27 @@ public class AdminCommand {
         }
 
         Main.deleteEntity(new BlacklistedWord(triggerText));
-        event.getInteraction().getHook().sendMessage("Work done!").queue();
+        event.getInteraction().getHook().sendMessage("Removed -> " + triggerText + " !").queue();
+    }
+
+    @JDASlashCommand(name = "admin", group = "releaseclarifytrigger", subcommand = "list", description = "See all triggers!")
+    public void onAdminRequestClarifyList(
+            GuildSlashEvent event
+    ) {
+        event.deferReply(true).queue();
+
+        if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
+            event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+        }
+
+        StringBuilder stringBuilder = new StringBuilder("```\n");
+        for (var word : Main.getEntities(new BlacklistedWord(), "", Map.of()).get()) {
+            stringBuilder.append(word.getContent()).append("\n");
+        }
+
+        stringBuilder.append("```");
+
+        event.getInteraction().getHook().sendMessage(stringBuilder.toString()).queue();
     }
 
     @JDASlashCommand(name = "admin", group = "lobby", subcommand = "purge", description = "Purge all lobbies!")

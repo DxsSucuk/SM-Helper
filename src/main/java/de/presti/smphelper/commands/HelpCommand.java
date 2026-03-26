@@ -6,6 +6,7 @@ import io.github.freya022.botcommands.api.commands.annotations.Cooldown;
 import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashEvent;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.JDASlashCommand;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
@@ -26,20 +27,19 @@ public class HelpCommand {
         event.deferReply(true).queue();
 
         MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder();
-        messageCreateBuilder.setComponents(Section.of(
+        messageCreateBuilder.setComponents(Container.of(Section.of(
                 Thumbnail.fromFile(ResourceUtil.getResourceAsFileUpload("/minispidey.png")),
                 TextDisplay.of("## What can I help you with?"),
                 TextDisplay.of("Below you can select one of many FAQs!"),
-                TextDisplay.of("If you question isn't answered feel free to ask in <#1321529763583492220>")
+                TextDisplay.of("If your question isn't answered feel free to ask in <#1321529763583492220>")
         ).withUniqueId(1), ActionRow.of(StringSelectMenu.create("help:select")
                 .addOptions(
                         SelectOption.of("When release", "release"),
                         SelectOption.of("How to get mod", "mod-get"),
                         SelectOption.of("Help with mod", "mod-help")
-                ).build()));
+                ).build())));
         messageCreateBuilder.useComponentsV2();
 
-        // TODO:: make a thingy with buttons.
         event.getInteraction().getHook().sendMessage(messageCreateBuilder.build()).queue();
     }
 }
