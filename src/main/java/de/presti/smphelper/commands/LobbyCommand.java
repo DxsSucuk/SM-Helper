@@ -51,7 +51,7 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
             return;
         }
 
-        if (Main.getTemporalVoiceCategory() >= 0) {
+        if (Main.getTemporalVoiceCategory() <= 0) {
             event.getInteraction().getHook().sendMessage("Lobby has not been setup yet!").queue();
             return;
         }
