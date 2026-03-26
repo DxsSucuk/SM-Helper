@@ -152,7 +152,7 @@ public class ComponentListener extends ListenerAdapter {
 
                     try (var inputStream = logFile.getProxy().download().join()) {
                         byte[] content = inputStream.readAllBytes();
-                        offset = ResourceUtil.getOffsetFromLog(new String(content));
+                        offset = ResourceUtil.getOffsetFromLog(new String(content, StandardCharsets.UTF_8));
                         logDisplay = FileDisplay.fromFile(FileUpload.fromData(content, logFile.getFileName())).withUniqueId(1001);
                     }
                     replacedLog = true;
