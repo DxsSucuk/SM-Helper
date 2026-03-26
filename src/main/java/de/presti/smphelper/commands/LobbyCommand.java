@@ -78,7 +78,7 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
 
         event.getJDA().getCategoryById(Config.getInstance().getTemporalVoiceCategory()).createVoiceChannel(lobbyName).queue(channel -> {
             Main.getTempVoiceChannelAndOwnerIds().put(channel.getIdLong(), event.getMember().getIdLong());
-
+            channel.getManager().setUserLimit(16).queue();
             MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder();
             messageCreateBuilder.setEmbeds(embedBuilder.build());
             messageCreateBuilder.setContent("A new lobby is available -> " + channel.getAsMention());

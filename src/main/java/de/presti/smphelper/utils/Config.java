@@ -31,6 +31,7 @@ public class Config {
     long testerReportChannelId;
     long forumChannelId, testerForumChannelId;
     long respondToMessageCategory;
+    boolean clearTemporalVCsOnStart;
     boolean sendInitialMessage;
     boolean setInitialForumTag;
     long minViolationsUntilTimeout;
