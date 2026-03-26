@@ -87,7 +87,7 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
             if (event.getMember().getVoiceState() != null && event.getMember().getVoiceState().inAudioChannel()) {
                 event.getGuild().moveVoiceMember(event.getMember(), channel).queue();
             }
-            event.getInteraction().getHook().sendMessage("Your lobby has been created feel free to join -> " + channel.getAsMention()).queue();
+            event.getInteraction().getHook().sendMessage("Your lobby has been created " + (privateLobby ? "ask to be invited and join ->" : "feel free to join -> ") + channel.getAsMention()).queue();
             ThreadUtil.createThread(x -> {
                 var currentChannelState = event.getGuild().getVoiceChannelById(channel.getIdLong());
                 if (currentChannelState != null && currentChannelState.getMembers().isEmpty()) {
