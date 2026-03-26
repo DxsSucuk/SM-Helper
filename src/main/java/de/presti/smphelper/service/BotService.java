@@ -21,8 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.net.ssl.SSLSocketFactory;
 import java.util.Set;
 
-import static net.dv8tion.jda.api.utils.cache.CacheFlag.FORUM_TAGS;
-import static net.dv8tion.jda.api.utils.cache.CacheFlag.VOICE_STATE;
+import static net.dv8tion.jda.api.utils.cache.CacheFlag.*;
 
 @Slf4j
 @BService
@@ -36,13 +35,13 @@ public class BotService extends JDAService {
     @NotNull
     @Override
     public Set<CacheFlag> getCacheFlags() {
-        return Set.of(FORUM_TAGS, VOICE_STATE);
+        return Set.of(FORUM_TAGS, VOICE_STATE, MEMBER_OVERRIDES);
     }
 
     @NotNull
     @Override
     public Set<GatewayIntent> getIntents() {
-        return defaultIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_VOICE_STATES);
+        return defaultIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MODERATION);
     }
 
     @Override

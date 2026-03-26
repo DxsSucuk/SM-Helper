@@ -26,6 +26,7 @@ public class AdminCommand {
         event.deferReply(true).queue();
         if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
             event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+            return;
         }
 
         Main.updateEntity(new BlacklistedWord(triggerText));
@@ -41,6 +42,7 @@ public class AdminCommand {
 
         if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
             event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+            return;
         }
 
         Main.deleteEntity(new BlacklistedWord(triggerText));
@@ -55,6 +57,7 @@ public class AdminCommand {
 
         if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
             event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+            return;
         }
 
         StringBuilder stringBuilder = new StringBuilder("```\n");
@@ -75,6 +78,7 @@ public class AdminCommand {
 
         if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
             event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+            return;
         }
 
         Main.getTempVoiceChannelAndOwnerIds().clear();
@@ -98,6 +102,7 @@ public class AdminCommand {
 
         if (!event.getMember().hasPermission(Permission.MANAGE_SERVER)) {
             event.getInteraction().getHook().sendMessage("No permissions for this, get your ass out of here!").queue();
+            return;
         }
 
         Main.setLockdown(!Main.isLockdown());

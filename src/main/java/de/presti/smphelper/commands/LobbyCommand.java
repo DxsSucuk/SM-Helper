@@ -85,23 +85,42 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
 
             event.getJDA().getTextChannelById(Config.getInstance().getLobbyShareChannel()).sendMessage(messageCreateBuilder.build()).queue();
             if (privateLobby) {
-                channel.getManager().putRolePermissionOverride(channel.getGuild().getPublicRole().getIdLong(), null, Collections.singleton(Permission.VOICE_CONNECT)).queue();
-                channel.getManager().putMemberPermissionOverride(event.getMember().getIdLong(), Collections.singleton(Permission.VOICE_CONNECT), null).queue();
+                var publicPerms = channel.getPermissionOverride(channel.getGuild().getPublicRole());
+
+                if (publicPerms != null) {
+                    var deny = new java.util.ArrayList<>(publicPerms.getDenied().stream().toList());
+
+                    if (deny.stream().noneMatch(x -> x == Permission.VOICE_CONNECT))
+                        deny.add(Permission.VOICE_CONNECT);
+
+                    channel.getManager().putRolePermissionOverride(channel.getGuild().getPublicRole().getIdLong(), publicPerms.getAllowed(), deny).queue();
+                }
+
+                var permsForMember = channel.getPermissionOverride(event.getMember());
+                if (permsForMember != null) {
+                    var allow = new java.util.ArrayList<>(permsForMember.getAllowed().stream().toList());
+
+                    if (allow.stream().noneMatch(x -> x == Permission.VOICE_CONNECT))
+                        allow.add(Permission.VOICE_CONNECT);
+
+                    channel.getManager().putMemberPermissionOverride(event.getMember().getIdLong(), allow, permsForMember.getDenied()).queue();
+                }
             }
 
             if (event.getMember().getVoiceState() != null && event.getMember().getVoiceState().inAudioChannel()) {
                 event.getGuild().moveVoiceMember(event.getMember(), channel).queue();
             }
-            event.getInteraction().getHook().sendMessage("Your lobby has been created " + (privateLobby ? "ask to be invited and join ->" : "feel free to join -> ") + channel.getAsMention()).queue();
+            event.getInteraction().getHook().sendMessage("Your lobby has been created" + (privateLobby ? ", ask to be invited and join ->" : " feel free to join -> ") + channel.getAsMention()).queue();
             ThreadUtil.createThread(x -> {
                 var currentChannelState = event.getGuild().getVoiceChannelById(channel.getIdLong());
                 if (currentChannelState != null && currentChannelState.getMembers().isEmpty()) {
-                    currentChannelState.delete().queue();
+                    currentChannelState.delete().reason("Auto clear.").queue();
                 }
             }, Duration.ofSeconds(30), false, false);
         });
     }
 
+    @Cooldown(cooldown = 5, unit = ChronoUnit.SECONDS)
     @JDASlashCommand(name = "lobby", subcommand = "invite", description = "Invite people to your lobby!")
     public void onLobbyInvite(
             GuildSlashEvent event,
@@ -116,8 +135,26 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
                 var isPrivate = channel.getRolePermissionOverrides().stream().anyMatch(x -> x.isRoleOverride() && x.getRole().isPublicRole() && x.getDenied().contains(Permission.VOICE_CONNECT));
 
                 if (isPrivate) {
-                    channel.getManager().putMemberPermissionOverride(inviteMember.getIdLong(), Collections.singleton(Permission.VOICE_CONNECT), null).queue();
-                    event.getInteraction().getHook().sendMessage("Connect permission has been granted for " + inviteMember.getAsMention() + "!").queue();
+                    var override = channel.getPermissionOverride(inviteMember);
+                    if (override == null) {
+                        channel.getManager().putMemberPermissionOverride(inviteMember.getIdLong(), Collections.singleton(Permission.VOICE_CONNECT), null).queue();
+                        event.getInteraction().getHook().sendMessage("Connect permission has been granted for " + inviteMember.getAsMention() + "!").queue();
+
+                        inviteMember.getUser().openPrivateChannel().queue(privateChannel -> {
+                            String lobbyName = event.getUser().getGlobalName() + "'s lobby";
+
+                            EmbedBuilder embedBuilder = new EmbedBuilder();
+                            embedBuilder.setTitle(lobbyName);
+                            embedBuilder.setColor(Color.GREEN);
+                            embedBuilder.setDescription("You have been invited to join the lobby!");
+                            MessageCreateBuilder messageCreateBuilder = new MessageCreateBuilder();
+                            messageCreateBuilder.setEmbeds(embedBuilder.build());
+                            messageCreateBuilder.setContent("You have been invited feel free to join! -> " + channel.getAsMention());
+                            privateChannel.sendMessage(messageCreateBuilder.build()).queue();
+                        });
+                    } else {
+                        event.getInteraction().getHook().sendMessage("Already invited " + inviteMember.getAsMention() + "!").queue();
+                    }
                 } else {
                     event.getInteraction().getHook().sendMessage("This is a public lobby, you can't invite people!").queue();
                 }
@@ -129,10 +166,11 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
         }
     }
 
+    @Cooldown(cooldown = 5, unit = ChronoUnit.SECONDS)
     @JDASlashCommand(name = "lobby", subcommand = "kick", description = "Kick people from your lobby!")
     public void onLobbyKick(
             GuildSlashEvent event,
-            @SlashOption(description = "Who would you like to kick?", name = "kick") Member kickMemeber
+            @SlashOption(description = "Who would you like to kick?", name = "kick") Member kickMember
     ) {
         event.deferReply(true).queue();
 
@@ -143,8 +181,11 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
                 var isPrivate = channel.getRolePermissionOverrides().stream().anyMatch(x -> x.isRoleOverride() && x.getRole().isPublicRole() && x.getDenied().contains(Permission.VOICE_CONNECT));
 
                 if (isPrivate) {
-                    channel.getManager().removePermissionOverride(kickMemeber.getIdLong()).queue();
-                    event.getInteraction().getHook().sendMessage("Connect permission has been denied for " + kickMemeber.getAsMention() + "!").queue();
+                    channel.getManager().removePermissionOverride(kickMember.getIdLong()).queue();
+                    if (kickMember.getVoiceState() != null && kickMember.getVoiceState().getChannel() != null && kickMember.getVoiceState().getChannel().getIdLong() == channel.getIdLong()) {
+                        event.getGuild().kickVoiceMember(kickMember).queue();
+                    }
+                    event.getInteraction().getHook().sendMessage("Connect permission has been denied for " + kickMember.getAsMention() + "!").queue();
                 } else {
                     event.getInteraction().getHook().sendMessage("This is a public lobby, you can't kick people!").queue();
                 }
@@ -156,6 +197,7 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
         }
     }
 
+    @Cooldown(cooldown = 5, unit = ChronoUnit.SECONDS)
     @JDASlashCommand(name = "lobby", subcommand = "delete", description = "Delete your lobby!")
     public void onLobbyDelete(
             GuildSlashEvent event
@@ -166,9 +208,13 @@ public class LobbyCommand implements SlashOptionChoiceProvider {
         if (channelIdOptional.isPresent()) {
             var channel = event.getJDA().getVoiceChannelById(channelIdOptional.get().getKey());
             if (channel != null) {
-                channel.delete().queue();
-                event.getInteraction().getHook().sendMessage("Your lobby has been deleted.").queue();
-                Main.getTempVoiceChannelAndOwnerIds().remove(channel.getIdLong());
+                channel.delete().onErrorMap(x -> {
+                    event.getInteraction().getHook().sendMessage("Failed to delete channel, please contact staff").queue();
+                    return null;
+                }).queue(success -> {
+                    event.getInteraction().getHook().sendMessage("Your lobby has been deleted.").queue();
+                    Main.getTempVoiceChannelAndOwnerIds().remove(channel.getIdLong());
+                });
             } else {
                 event.getInteraction().getHook().sendMessage("Your lobby doesn't exist anymore???").queue();
                 Main.getTempVoiceChannelAndOwnerIds().remove(channelIdOptional.get().getKey());
