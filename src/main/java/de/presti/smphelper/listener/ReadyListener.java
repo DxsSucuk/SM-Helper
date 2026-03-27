@@ -39,6 +39,7 @@ public class ReadyListener extends ListenerAdapter {
             var category = event.getJDA().getCategoryById(Main.getTemporalVoiceCategory());
             if (category != null) {
                 for (var channel : category.getVoiceChannels()) {
+                    if (channel.getIdLong() == Config.getInstance().getWaitingLobbyVCChannel()) continue;
                     if (channel.getMembers().isEmpty()) {
                         channel.delete().queue();
                     }

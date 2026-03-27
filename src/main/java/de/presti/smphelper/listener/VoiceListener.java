@@ -15,10 +15,12 @@ public class VoiceListener extends ListenerAdapter {
         super.onGuildVoiceUpdate(event);
 
         if (event.getChannelLeft() != null && event.getChannelLeft().getParentCategoryIdLong() == Config.getInstance().getTemporalVoiceCategory()) {
-            if (event.getChannelLeft().getMembers().isEmpty()) {
-                event.getChannelLeft().delete().reason("No one in lobby.").queue(success -> {
-                    Main.getTempVoiceChannelAndOwnerIds().remove(event.getChannelLeft().getIdLong());
-                });
+            if (Main.getTempVoiceChannelAndOwnerIds().containsKey(event.getChannelLeft().getIdLong())) {
+                if (event.getChannelLeft().getMembers().isEmpty()) {
+                    event.getChannelLeft().delete().reason("No one in lobby.").queue(success -> {
+                        Main.getTempVoiceChannelAndOwnerIds().remove(event.getChannelLeft().getIdLong());
+                    });
+                }
             }
         }
     }

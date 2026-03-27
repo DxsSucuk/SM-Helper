@@ -38,6 +38,7 @@ public class Config {
     long devUserId;
     long temporalVoiceCategory;
     long lobbyShareChannel;
+    long waitingLobbyVCChannel;
 
     boolean trustAllSsl;
 

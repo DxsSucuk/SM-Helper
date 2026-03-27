@@ -2,6 +2,7 @@ package de.presti.smphelper.commands;
 
 import de.presti.smphelper.Main;
 import de.presti.smphelper.dto.BlacklistedWord;
+import de.presti.smphelper.utils.Config;
 import io.github.freya022.botcommands.api.commands.annotations.Command;
 import io.github.freya022.botcommands.api.commands.annotations.Cooldown;
 import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashEvent;
@@ -85,6 +86,7 @@ public class AdminCommand {
         var category = event.getJDA().getCategoryById(Main.getTemporalVoiceCategory());
         if (category != null) {
             for (var channel : category.getVoiceChannels()) {
+                if (channel.getIdLong() == Config.getInstance().getWaitingLobbyVCChannel()) continue;
                 if (channel.getMembers().isEmpty()) {
                     channel.delete().queue();
                 }
