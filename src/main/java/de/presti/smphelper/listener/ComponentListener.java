@@ -235,13 +235,13 @@ public class ComponentListener extends ListenerAdapter {
             }
 
             String finalOffset = offset;
+            Main.addTag(forumChannel, finalOffset);
             forumChannel.createForumPost(description.substring(0, Math.min(description.length() - 1, 100)),
                     new MessageCreateBuilder().addComponents(container).useComponentsV2().build()).queue(x -> {
                 List<ForumTagSnowflake> tags = new ArrayList<>();
                 if (!finalOffset.isBlank()) {
                     var existingTags = forumChannel.getAvailableTagsByName(finalOffset, true);
                     if (existingTags.isEmpty()) {
-                        Main.addTag(forumChannel, finalOffset);
                         tags.addAll(forumChannel.getAvailableTagsByName(finalOffset, true));
                     } else {
                         tags.addAll(existingTags);
